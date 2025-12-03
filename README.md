@@ -181,46 +181,6 @@ This package is designed to work in both Node.js and modern browsers:
 - TypeScript definitions include DOM types
 - Zero external dependencies for production
 
-
-
-## Development
-
-### Building from Source
-
-```bash
-# Install dependencies
-npm install
-
-# Build the project
-npm run build
-
-# Watch for changes
-npm run watch
-
-# Run tests
-npm test
-
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-```
-
-### Project Structure
-
-```
-snowleopard_ts/
-├── src/
-│   ├── index.ts           # Main exports
-│   ├── models.ts          # Type definitions
-│   └── client.ts          # Client implementation
-├── dist/                  # Compiled JavaScript
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
 ## API Reference
 
 ### SnowLeopardPlaygroundClient
@@ -267,6 +227,3 @@ For issues and questions:
 - GitHub Issues: [https://github.com/SnowLeopard-AI/snowleopard_ts/issues](https://github.com/SnowLeopard-AI/snowleopard_ts/issues)
 - Email: hello@snowleopard.ai
 
-## Contributing
-
-Contributions are welcome! Please read our contributing guidelines before submitting PRs.
