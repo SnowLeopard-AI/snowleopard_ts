@@ -106,11 +106,11 @@ describe('SnowLeopardPlaygroundClient', () => {
         expect.objectContaining({
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${mockApiKey}`,
+            Authorization: `Bearer ${mockApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ userQuery: mockQuery }),
-        })
+        }),
       );
       expect(result).toEqual(mockData);
       expect(result.responseStatus).toBe(ResponseStatus.SUCCESS);
@@ -138,7 +138,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ userQuery: mockQuery, knownData }),
-        })
+        }),
       );
     });
 
@@ -169,18 +169,14 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow(
-        'HTTP Error: 500'
-      );
+      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('HTTP Error: 500');
     });
 
     it('should handle network errors', async () => {
       const networkError = new Error('Network Error');
       (global.fetch as jest.Mock).mockRejectedValue(networkError);
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow(
-        'Network Error'
-      );
+      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('Network Error');
     });
 
     it('should handle non-200/409 status codes', async () => {
@@ -190,9 +186,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow(
-        'HTTP Error: 404'
-      );
+      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('HTTP Error: 404');
     });
   });
 
@@ -256,7 +250,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ userQuery: mockQuery }),
-        })
+        }),
       );
       expect(chunks).toHaveLength(3);
       expect(chunks[0].__type__).toBe('responseStart');
@@ -274,8 +268,8 @@ describe('SnowLeopardPlaygroundClient', () => {
                 __type__: 'responseStart',
                 callId: 'call-1',
                 userQuery: mockQuery,
-              }) + '\n'
-            )
+              }) + '\n',
+            ),
           );
           controller.close();
         },
@@ -288,11 +282,7 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(
-        mockDatafileId,
-        mockQuery,
-        knownData
-      )) {
+      for await (const chunk of client.response(mockDatafileId, mockQuery, knownData)) {
         chunks.push(chunk);
       }
 
@@ -301,7 +291,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({ userQuery: mockQuery, knownData }),
-        })
+        }),
       );
     });
 

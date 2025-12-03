@@ -2,17 +2,17 @@
 // released under the MIT license - see LICENSE file
 
 export enum ResponseStatus {
-  SUCCESS = "SUCCESS",
-  NOT_FOUND_IN_SCHEMA = "NOT_FOUND_IN_SCHEMA",
-  UNKNOWN = "UNKNOWN",
-  INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR",
-  AUTHORIZATION_FAILED = "AUTHORIZATION_FAILED",
-  LLM_ERROR = "LLM_ERROR",
-  LLM_TOKEN_LIMIT_REACHED = "LLM_TOKEN_LIMIT_REACHED",
+  SUCCESS = 'SUCCESS',
+  NOT_FOUND_IN_SCHEMA = 'NOT_FOUND_IN_SCHEMA',
+  UNKNOWN = 'UNKNOWN',
+  INTERNAL_SERVER_ERROR = 'INTERNAL_SERVER_ERROR',
+  AUTHORIZATION_FAILED = 'AUTHORIZATION_FAILED',
+  LLM_ERROR = 'LLM_ERROR',
+  LLM_TOKEN_LIMIT_REACHED = 'LLM_TOKEN_LIMIT_REACHED',
 }
 
 export interface SchemaData {
-  __type__: "schemaData";
+  __type__: 'schemaData';
   schemaId: string;
   schemaType: string;
   query: string;
@@ -24,7 +24,7 @@ export interface SchemaData {
 }
 
 export interface ErrorSchemaData {
-  __type__: "errorSchemaData";
+  __type__: 'errorSchemaData';
   schemaType: string;
   schemaId: string;
   query: string;
@@ -35,33 +35,33 @@ export interface ErrorSchemaData {
 }
 
 export interface RetrieveResponse {
-  __type__: "retrieveResponse";
+  __type__: 'retrieveResponse';
   callId: string;
   data: Array<SchemaData | ErrorSchemaData>;
   responseStatus: ResponseStatus;
 }
 
 export interface RetrieveResponseError {
-  __type__: "apiError";
+  __type__: 'apiError';
   callId: string;
   responseStatus: string;
   description: string;
 }
 
 export interface ResponseStart {
-  __type__: "responseStart";
+  __type__: 'responseStart';
   callId: string;
   userQuery: string;
 }
 
 export interface ResponseData {
-  __type__: "responseData";
+  __type__: 'responseData';
   callId: string;
   data: Array<SchemaData | ErrorSchemaData>;
 }
 
 export interface EarlyTermination {
-  __type__: "earlyTermination";
+  __type__: 'earlyTermination';
   callId: string;
   responseStatus: ResponseStatus;
   reason: string;
@@ -69,7 +69,7 @@ export interface EarlyTermination {
 }
 
 export interface ResponseLLMResult {
-  __type__: "responseResult";
+  __type__: 'responseResult';
   callId: string;
   responseStatus: ResponseStatus;
   llmResponse: Record<string, any>;
@@ -84,39 +84,38 @@ export type ResponseDataObjects =
   | EarlyTermination
   | ResponseLLMResult;
 
-export type BaseResponseObject = ResponseDataObjects | RetrieveResponseObjects
+export type BaseResponseObject = ResponseDataObjects | RetrieveResponseObjects;
 
 function parseType(obj: any): BaseResponseObject {
   if (!obj?.__type__) {
-    throw new Error("Missing __type__ field");
+    throw new Error('Missing __type__ field');
   }
 
   switch (obj.__type__) {
-    case "apiError":
+    case 'apiError':
       return obj as RetrieveResponseError;
-    case "retrieveResponse":
+    case 'retrieveResponse':
       return obj as RetrieveResponse;
-    case "errorSchemaData":
+    case 'errorSchemaData':
       return obj as ErrorSchemaData;
-    case "responseStart":
+    case 'responseStart':
       return obj as ResponseStart;
-    case "responseData":
+    case 'responseData':
       return obj as ResponseData;
-    case "earlyTermination":
+    case 'earlyTermination':
       return obj as EarlyTermination;
-    case "responseResult":
+    case 'responseResult':
       return obj as ResponseLLMResult;
     default:
-      throw new Error("Unknown response type " + obj.__type__);
+      throw new Error('Unknown response type ' + obj.__type__);
   }
 }
-
 
 /**
  * Parse API response objects into typed interfaces
  */
 export function parse(obj: any): any {
-  if( obj == null ) {
+  if (obj == null) {
     return null;
   } else if (typeof obj === 'object' && !Array.isArray(obj)) {
     return parseType(obj);

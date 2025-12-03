@@ -41,13 +41,10 @@ export class SnowLeopardPlaygroundClient {
 
   constructor(options?: SnowLeopardPlaygroundClientOptions) {
     // Try to get API key from options, then environment variable (Node.js only)
-    const apiKey = options?.apiKey ||
-      (typeof process !== 'undefined' && process.env?.SNOWLEOPARD_API_KEY);
+    const apiKey = options?.apiKey || (typeof process !== 'undefined' && process.env?.SNOWLEOPARD_API_KEY);
 
     if (!apiKey) {
-      throw new Error(
-        'Missing required argument "apiKey". Please provide it in the constructor options.'
-      );
+      throw new Error('Missing required argument "apiKey". Please provide it in the constructor options.');
     }
 
     this.apiKey = apiKey;
@@ -68,10 +65,7 @@ export class SnowLeopardPlaygroundClient {
     return `datafiles/${datafileId}/${endpoint}`;
   }
 
-  private buildRequestBody(
-    userQuery: string,
-    knownData?: Record<string, any>
-  ): Record<string, any> {
+  private buildRequestBody(userQuery: string, knownData?: Record<string, any>): Record<string, any> {
     const body: Record<string, any> = { userQuery };
     if (knownData !== undefined) {
       body.knownData = knownData;
@@ -79,11 +73,7 @@ export class SnowLeopardPlaygroundClient {
     return body;
   }
 
-  private async fetchWithTimeout(
-    url: string,
-    options: RequestInit,
-    timeoutMs: number
-  ): Promise<Response> {
+  private async fetchWithTimeout(url: string, options: RequestInit, timeoutMs: number): Promise<Response> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -122,7 +112,7 @@ export class SnowLeopardPlaygroundClient {
   async retrieve(
     datafileId: string,
     userQuery: string,
-    knownData?: Record<string, any>
+    knownData?: Record<string, any>,
   ): Promise<RetrieveResponseObjects> {
     try {
       const url = `${this.baseURL}/${this.buildPath(datafileId, 'retrieve')}`;
@@ -131,12 +121,12 @@ export class SnowLeopardPlaygroundClient {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(this.buildRequestBody(userQuery, knownData)),
         },
-        this.timeout.read
+        this.timeout.read,
       );
 
       if (response.status !== 200 && response.status !== 409) {
@@ -167,7 +157,7 @@ export class SnowLeopardPlaygroundClient {
   async *response(
     datafileId: string,
     userQuery: string,
-    knownData?: Record<string, any>
+    knownData?: Record<string, any>,
   ): AsyncGenerator<ResponseDataObjects, void, undefined> {
     try {
       const url = `${this.baseURL}/${this.buildPath(datafileId, 'response')}`;
@@ -176,12 +166,12 @@ export class SnowLeopardPlaygroundClient {
         {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${this.apiKey}`,
+            Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(this.buildRequestBody(userQuery, knownData)),
         },
-        this.timeout.read
+        this.timeout.read,
       );
 
       if (response.status !== 200) {

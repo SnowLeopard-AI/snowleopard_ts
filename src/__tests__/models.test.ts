@@ -52,14 +52,32 @@ describe('models', () => {
       const validTypes = [
         { __type__: 'apiError', callId: 'call-1', responseStatus: 'ERROR', description: 'test' },
         { __type__: 'retrieveResponse', callId: 'call-2', data: [], responseStatus: ResponseStatus.SUCCESS },
-        { __type__: 'errorSchemaData', schemaType: 'table', schemaId: 'schema-1', query: 'SELECT', error: 'error', querySummary: {} },
+        {
+          __type__: 'errorSchemaData',
+          schemaType: 'table',
+          schemaId: 'schema-1',
+          query: 'SELECT',
+          error: 'error',
+          querySummary: {},
+        },
         { __type__: 'responseStart', callId: 'call-3', userQuery: 'test query' },
         { __type__: 'responseData', callId: 'call-4', data: [] },
-        { __type__: 'earlyTermination', callId: 'call-5', responseStatus: ResponseStatus.LLM_ERROR, reason: 'timeout', extra: {} },
-        { __type__: 'responseResult', callId: 'call-6', responseStatus: ResponseStatus.SUCCESS, llmResponse: {} },
+        {
+          __type__: 'earlyTermination',
+          callId: 'call-5',
+          responseStatus: ResponseStatus.LLM_ERROR,
+          reason: 'timeout',
+          extra: {},
+        },
+        {
+          __type__: 'responseResult',
+          callId: 'call-6',
+          responseStatus: ResponseStatus.SUCCESS,
+          llmResponse: {},
+        },
       ];
 
-      validTypes.forEach(obj => {
+      validTypes.forEach((obj) => {
         expect(() => parse(obj)).not.toThrow();
         expect(parse(obj)).toEqual(obj);
       });
@@ -109,7 +127,12 @@ describe('models', () => {
       const arr = [
         { __type__: 'responseStart', callId: 'call-1', userQuery: 'query1' },
         { __type__: 'responseData', callId: 'call-2', data: [] },
-        { __type__: 'responseResult', callId: 'call-3', responseStatus: ResponseStatus.SUCCESS, llmResponse: {} },
+        {
+          __type__: 'responseResult',
+          callId: 'call-3',
+          responseStatus: ResponseStatus.SUCCESS,
+          llmResponse: {},
+        },
       ];
       const result = parse(arr);
       expect(result).toEqual(arr);
