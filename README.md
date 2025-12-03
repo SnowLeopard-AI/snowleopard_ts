@@ -226,4 +226,5 @@ MIT License - see LICENSE file for details
 For issues and questions:
 - GitHub Issues: [https://github.com/SnowLeopard-AI/snowleopard_ts/issues](https://github.com/SnowLeopard-AI/snowleopard_ts/issues)
 - Email: hello@snowleopard.ai
+- Reach out on [Discord](https://discord.gg/WGAyr8NpEX)
 

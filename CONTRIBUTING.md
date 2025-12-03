@@ -90,6 +90,7 @@ snowleopard_ts/
 
 - Open an issue on GitHub
 - Email: hello@snowleopard.ai
+- Reach out on [Discord](https://discord.gg/WGAyr8NpEX)
 
 ## License
 
