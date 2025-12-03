@@ -163,11 +163,11 @@ try {
 
 
 
-## Browser Compatibility
+##  Compatibility
 
 This package is designed to work in both Node.js and modern browsers:
 
-- ✅ **Node.js** 14.0.0 or higher
+- ✅ **Node.js** 20.0.0 or higher
 - ✅ **Modern Browsers** with ES2020 support:
     - Chrome 80+
     - Firefox 74+
