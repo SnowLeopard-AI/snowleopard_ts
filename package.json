@@ -1,5 +1,5 @@
 {
-  "name": "@snowleopard/client",
+  "name": "@snowleopard-ai/client",
   "type": "module",
   "version": "0.1.0",
   "description": "TypeScript/JavaScript client library for Snow Leopard Playground APIs - works in both Node.js and browsers",
@@ -16,6 +16,7 @@
   },
   "keywords": [
     "snowleopard",
+    "snowleopard-ai",
     "ai",
     "api-client",
     "typescript",

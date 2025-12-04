@@ -19,8 +19,8 @@ npm --version
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/SnowLeopard-AI/snowleopard_js.git
-   cd snowleopard_js
+   git clone https://github.com/SnowLeopard-AI/snowleopard_ts.git
+   cd snowleopard_ts
    ```
 
 2. **Install dependencies**
@@ -79,7 +79,7 @@ snowleopard_ts/
 ├── package.json           # Package configuration
 ├── tsconfig.json          # TypeScript configuration
 ├── jest.config.js         # Jest testing configuration
-├── .eslintrc.cjs           # ESLint configuration
+├── .eslint.config.mjs     # ESLint configuration
 ├── .prettierrc            # Prettier configuration
 ├── README.md              # User documentation
 └── CONTRIBUTING.md        # Contributing guidelines (this file)

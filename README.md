@@ -7,18 +7,18 @@ Universal TypeScript/JavaScript client library for [Snow Leopard Playground](htt
 ## Installation
 
 ```bash
-npm install @snowleopard/client
+npm install @snowleopard-ai/client
 # or
-yarn add @snowleopard/client
+yarn add @snowleopard-ai/client
 # or
-pnpm add @snowleopard/client
+pnpm add @snowleopard-ai/client
 ```
 
 ## Quick Start
 
 
 ```typescript
-import { SnowLeopardPlaygroundClient } from '@snowleopard/client';
+import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
 
 // Initialize the client
 const client = new SnowLeopardPlaygroundClient({
@@ -67,7 +67,7 @@ await client.close();
 ### Basic Usage
 
 ```typescript
-import { SnowLeopardPlaygroundClient } from '@snowleopard/client';
+import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
 
 const client = new SnowLeopardPlaygroundClient();
 
@@ -120,7 +120,7 @@ const client = new SnowLeopardPlaygroundClient({
 ### Error Handling
 
 ```typescript
-import { SnowLeopardPlaygroundClient } from '@snowleopard/client';
+import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
 
 const client = new SnowLeopardPlaygroundClient({ apiKey: 'your-api-key' });
 
