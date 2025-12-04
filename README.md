@@ -16,7 +16,6 @@ pnpm add @snowleopard/client
 
 ## Quick Start
 
-### TypeScript
 
 ```typescript
 import { SnowLeopardPlaygroundClient } from '@snowleopard/client';
@@ -43,25 +42,6 @@ for await (const chunk of client.response(
 }
 
 await client.close();
-```
-
-### JavaScript (CommonJS)
-
-```javascript
-const { SnowLeopardPlaygroundClient } = require('@snowleopard/client');
-
-const client = new SnowLeopardPlaygroundClient({
-  apiKey: 'your-api-key'
-});
-
-// Use async/await
-(async () => {
-  const response = await client.retrieve(
-    'your-datafile-id',
-    'What is the total revenue?'
-  );
-  console.log(response.data);
-})();
 ```
 
 ## Getting Started
