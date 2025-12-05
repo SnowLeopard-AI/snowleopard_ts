@@ -1,4 +1,4 @@
-# Snow Leopard SDK for TypeScript/JavaScript
+# Snow Leopard SDK for TypeScript
 
 Universal TypeScript/JavaScript client library for [Snow Leopard Playground](https://try.snowleopard.ai) APIs.
 
