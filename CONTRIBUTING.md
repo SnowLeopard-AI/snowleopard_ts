@@ -63,6 +63,54 @@ npm run lint
 # Format code
 npm run format
 ```
+### Bumping version / Creating tags
+
+For releasing a new version, follow these steps:
+
+1. **Bump the version** using npm version command:
+
+   ```shell
+   npm version patch   # For bug fixes (0.1.0 -> 0.1.1)
+   # or
+   npm version minor   # For new features (0.1.0 -> 0.2.0)
+   # or
+   npm version major   # For breaking changes (0.1.0 -> 1.0.0)
+   ```
+
+   This will automatically update `package.json` and `package-lock.json` and create a git commit.
+
+2. **Create a PR** with the version bump changes (`package.json` and `package-lock.json`)
+
+3. **After the PR is merged**, create and push a version tag:
+
+   ```shell
+   # Create an annotated tag (replace X.Y.Z with the new version)
+   git tag -a vX.Y.Z -m "Release version X.Y.Z"
+
+   # Push the tag to the remote repository
+   git push origin vX.Y.Z
+   ```
+
+   Example for version 0.1.2:
+   ```shell
+   git tag -a v0.1.2 -m "Release version 0.1.2"
+   git push origin v0.1.2
+   ``` 
+
+
+### Publishing to npm registry
+
+
+
+```shell
+
+# login to npm
+npm login
+
+# publish
+npm publish --access public
+
+```
 
 ## Project Structure
 
