@@ -1,6 +1,6 @@
 # Snow Leopard SDK for TypeScript
 
-Universal TypeScript/JavaScript client library for [Snow Leopard Playground](https://try.snowleopard.ai) APIs.
+TypeScript client library for [Snow Leopard Playground](https://try.snowleopard.ai) APIs.
 
 **Works in both Node.js and browser environments!**
 

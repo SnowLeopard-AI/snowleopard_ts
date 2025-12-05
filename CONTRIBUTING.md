@@ -1,4 +1,4 @@
-# Contributing to Snow Leopard JavaScript/TypeScript SDK
+# Contributing to Snow Leopard TypeScript SDK
 
 Thank you for your interest in contributing to the Snow Leopard SDK!
 
