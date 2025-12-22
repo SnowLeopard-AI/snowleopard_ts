@@ -15,6 +15,12 @@ export interface SnowLeopardPlaygroundClientOptions {
   baseURL?: string;
 }
 
+export interface SnowLeopardPlaygroundClientArgs {
+  userQuery: string,
+  datafileId?: string,
+  knownData?: Record<string, any>,
+}
+
 /**
  * Client for Snow Leopard Playground API
  *
@@ -23,11 +29,11 @@ export interface SnowLeopardPlaygroundClientOptions {
  * const client = new SnowLeopardPlaygroundClient({ apiKey: 'your-api-key' });
  *
  * // Query your data
- * const response = await client.retrieve('datafile-id', 'How many users signed up?');
+ * const response = await client.retrieve({datafileId: 'datafile-id', userQuery: 'How many users signed up?'});
  * console.log(response.data);
  *
  * // Stream responses
- * for await (const chunk of client.response('datafile-id', 'Show top customers')) {
+ * for await (const chunk of client.response({datafileId: 'datafile-id', userQuery: 'Show top customers'})) {
  *   console.log(chunk);
  * }
  *
@@ -61,8 +67,12 @@ export class SnowLeopardPlaygroundClient {
       'https://api.snowleopard.ai';
   }
 
-  private buildPath(datafileId: string, endpoint: string): string {
-    return `datafiles/${datafileId}/${endpoint}`;
+  private buildPath(datafileId: string | undefined, endpoint: string): string {
+    if (!datafileId) {
+      return endpoint;
+    } else {
+      return `datafiles/${datafileId}/${endpoint}`;
+    }
   }
 
   private buildRequestBody(userQuery: string, knownData?: Record<string, any>): Record<string, any> {
@@ -104,18 +114,15 @@ export class SnowLeopardPlaygroundClient {
   /**
    * Retrieve data from a datafile using a natural language query
    *
-   * @param datafileId - The ID of the datafile to query
-   * @param userQuery - Natural language query
-   * @param knownData - Optional known data to include in the query
    * @returns Promise resolving to RetrieveResponse object
+   * @param options
+   *   datafileId - The ID of the datafile to query
+   *   userQuery - Natural language query
+   *   knownData - Optional known data to include in the query
    */
-  async retrieve(
-    datafileId: string,
-    userQuery: string,
-    knownData?: Record<string, any>,
-  ): Promise<RetrieveResponseObjects> {
+  async retrieve(options: SnowLeopardPlaygroundClientArgs): Promise<RetrieveResponseObjects> {
     try {
-      const url = `${this.baseURL}/${this.buildPath(datafileId, 'retrieve')}`;
+      const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'retrieve')}`;
       const response = await this.fetchWithTimeout(
         url,
         {
@@ -124,7 +131,7 @@ export class SnowLeopardPlaygroundClient {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(this.buildRequestBody(userQuery, knownData)),
+          body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
         },
         this.timeout.read,
       );
@@ -149,18 +156,15 @@ export class SnowLeopardPlaygroundClient {
   /**
    * Stream natural language summary responses from a datafile query
    *
-   * @param datafileId - The ID of the datafile to query
-   * @param userQuery - Natural language query
-   * @param knownData - Optional known data to include in the query
    * @returns AsyncGenerator yielding response chunks
+   * @param options
+   *   datafileId - The ID of the datafile to query
+   *   userQuery - Natural language query
+   *   knownData - Optional known data to include in the query
    */
-  async *response(
-    datafileId: string,
-    userQuery: string,
-    knownData?: Record<string, any>,
-  ): AsyncGenerator<ResponseDataObjects, void, undefined> {
+  async *response(options: SnowLeopardPlaygroundClientArgs): AsyncGenerator<ResponseDataObjects, void, undefined> {
     try {
-      const url = `${this.baseURL}/${this.buildPath(datafileId, 'response')}`;
+      const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'response')}`;
       const response = await this.fetchWithTimeout(
         url,
         {
@@ -169,7 +173,7 @@ export class SnowLeopardPlaygroundClient {
             Authorization: `Bearer ${this.apiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(this.buildRequestBody(userQuery, knownData)),
+          body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
         },
         this.timeout.read,
       );

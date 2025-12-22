@@ -99,7 +99,11 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue(mockData),
       });
 
-      const result = await client.retrieve(mockDatafileId, mockQuery);
+      const result = await client.retrieve({
+          userQuery: mockQuery,
+          datafileId: mockDatafileId,
+        }
+      );
 
       expect(global.fetch).toHaveBeenCalledWith(
         `https://api.snowleopard.ai/datafiles/${mockDatafileId}/retrieve`,
@@ -131,7 +135,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue(mockData),
       });
 
-      await client.retrieve(mockDatafileId, mockQuery, knownData);
+      await client.retrieve({datafileId: mockDatafileId, userQuery: mockQuery, knownData: knownData});
 
       expect(global.fetch).toHaveBeenCalledWith(
         `https://api.snowleopard.ai/datafiles/${mockDatafileId}/retrieve`,
@@ -156,7 +160,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue(mockData),
       });
 
-      const result = await client.retrieve(mockDatafileId, mockQuery);
+      const result = await client.retrieve({datafileId: mockDatafileId, userQuery: mockQuery});
 
       expect(result.responseStatus).toBe(ResponseStatus.NOT_FOUND_IN_SCHEMA);
     });
@@ -169,14 +173,14 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('HTTP Error: 500');
+      await expect(client.retrieve({datafileId: mockDatafileId, userQuery: mockQuery})).rejects.toThrow('HTTP Error: 500');
     });
 
     it('should handle network errors', async () => {
       const networkError = new Error('Network Error');
       (global.fetch as jest.Mock).mockRejectedValue(networkError);
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('Network Error');
+      await expect(client.retrieve({datafileId: mockDatafileId, userQuery: mockQuery})).rejects.toThrow('Network Error');
     });
 
     it('should handle non-200/409 status codes', async () => {
@@ -186,7 +190,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('HTTP Error: 404');
+      await expect(client.retrieve({datafileId: mockDatafileId, userQuery: mockQuery})).rejects.toThrow('HTTP Error: 404');
     });
   });
 
@@ -241,7 +245,7 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(mockDatafileId, mockQuery)) {
+      for await (const chunk of client.response({datafileId: mockDatafileId, userQuery: mockQuery})) {
         chunks.push(chunk);
       }
 
@@ -282,7 +286,7 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(mockDatafileId, mockQuery, knownData)) {
+      for await (const chunk of client.response({datafileId: mockDatafileId, userQuery: mockQuery, knownData: knownData})) {
         chunks.push(chunk);
       }
 
@@ -313,7 +317,7 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(mockDatafileId, mockQuery)) {
+      for await (const chunk of client.response({datafileId: mockDatafileId, userQuery: mockQuery})) {
         chunks.push(chunk);
       }
 
@@ -324,7 +328,7 @@ describe('SnowLeopardPlaygroundClient', () => {
     it('should handle streaming errors', async () => {
       (global.fetch as jest.Mock).mockRejectedValue(new Error('Network Error'));
 
-      const generator = client.response(mockDatafileId, mockQuery);
+      const generator = client.response({datafileId: mockDatafileId, userQuery: mockQuery});
 
       await expect(generator.next()).rejects.toThrow('Network Error');
     });
@@ -336,7 +340,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         body: null,
       });
 
-      const generator = client.response(mockDatafileId, mockQuery);
+      const generator = client.response({datafileId: mockDatafileId, userQuery: mockQuery});
 
       await expect(generator.next()).rejects.toThrow('HTTP Error: 500');
     });

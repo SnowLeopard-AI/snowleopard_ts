@@ -26,18 +26,18 @@ const client = new SnowLeopardPlaygroundClient({
 });
 
 // Query your data in natural language
-const response = await client.retrieve(
-  'your-datafile-id',
-  'How many users signed up last month?'
-);
+const response = await client.retrieve({
+  datafileId: 'your-datafile-id',
+  userQuery: 'How many users signed up last month?'
+});
 
 console.log(response.data);
 
 // Stream responses
-for await (const chunk of client.response(
-  'your-datafile-id',
-  'Show me top 10 customers'
-)) {
+for await (const chunk of client.response({
+  datafileId: 'your-datafile-id',
+  userQuery: 'Show me top 10 customers'
+})) {
   console.log(chunk);
 }
 
@@ -72,17 +72,17 @@ import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
 const client = new SnowLeopardPlaygroundClient();
 
 // Get data directly from a natural language query
-const response = await client.retrieve(
-  'datafile-id',
-  "What's the total revenue?"
-);
+const response = await client.retrieve({
+  datafileId: 'datafile-id',
+  userQuery: "What's the total revenue?"
+});
 console.log(response.data);
 
 // Stream natural language summary of live data
-for await (const chunk of client.response(
-  'datafile-id',
-  'Show me top 10 customers'
-)) {
+for await (const chunk of client.response({
+  datafileId: 'datafile-id',
+  userQuery: 'Show me top 10 customers'
+})) {
   console.log(chunk);
 }
 
@@ -94,11 +94,11 @@ await client.close();
 You can provide additional context with the `knownData` parameter:
 
 ```typescript
-const response = await client.retrieve(
-  'datafile-id',
-  'Show sales for this region',
-  { region: 'North America' }
-);
+const response = await client.retrieve({
+  datafileId: 'datafile-id',
+  userQuery: 'Show sales for this region',
+  knownData: { region: 'North America' }
+});
 ```
 
 ### Configuration Options
@@ -125,10 +125,10 @@ import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
 const client = new SnowLeopardPlaygroundClient({ apiKey: 'your-api-key' });
 
 try {
-  const response = await client.retrieve(
-    'datafile-id',
-    'Your query here'
-  );
+  const response = await client.retrieve({
+    datafileId: 'datafile-id',
+    userQuery: 'Your query here'
+  });
 
   // Check response status
   if (response.responseStatus === 'SUCCESS') {
@@ -173,7 +173,7 @@ Create a new client instance.
 - `options.baseURL?: string` - Base API URL (defaults to `https://api.snowleopard.ai`)
 - `options.timeout?: TimeoutConfig` - Timeout configuration
 
-#### `retrieve(datafileId, userQuery, knownData?)`
+#### `retrieve({datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
 
 Retrieve data from a datafile using a natural language query.
 
@@ -182,7 +182,7 @@ Retrieve data from a datafile using a natural language query.
 - `knownData?: Record<string, any>` - Optional known data
 - Returns: `Promise<RetrieveResponseObjects>`
 
-#### `response(datafileId, userQuery, knownData?)`
+#### `response({datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
 
 Stream natural language summary responses from a datafile query.
 
