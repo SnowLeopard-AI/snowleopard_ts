@@ -120,6 +120,51 @@ describe('SnowLeopardPlaygroundClient', () => {
       expect(result.responseStatus).toBe(ResponseStatus.SUCCESS);
     });
 
+    it('should successfully retrieve data without datafile id', async () => {
+      const mockData = {
+        __type__: 'retrieveResponse',
+        callId: 'test-call-id',
+        responseStatus: ResponseStatus.SUCCESS,
+        data: [
+          {
+            __type__: 'schemaData',
+            schemaId: 'schema-1',
+            schemaType: 'table',
+            query: 'SELECT * FROM users',
+            rows: [{ id: 1, name: 'John' }],
+            querySummary: {},
+            rowMax: 100,
+            isTrimmed: false,
+          },
+        ],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue(mockData),
+      });
+
+      const result = await client.retrieve({
+          userQuery: mockQuery,
+        }
+      );
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/retrieve`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userQuery: mockQuery }),
+        }),
+      );
+      expect(result).toEqual(mockData);
+      expect(result.responseStatus).toBe(ResponseStatus.SUCCESS);
+    });
+
     it('should retrieve data with knownData', async () => {
       const knownData = { region: 'North America' };
       const mockData = {
