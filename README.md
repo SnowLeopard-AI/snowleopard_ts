@@ -1,6 +1,6 @@
 # Snow Leopard SDK for TypeScript
 
-TypeScript client library for [Snow Leopard Playground](https://try.snowleopard.ai) APIs.
+TypeScript client library for [Snow Leopard](https://try.snowleopard.ai) APIs.
 
 **Works in both Node.js and browser environments!**
 
@@ -18,26 +18,26 @@ pnpm add @snowleopard-ai/client
 
 
 ```typescript
-import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
+import { SnowLeopardClient } from '@snowleopard-ai/client';
 
 // Initialize the client
-const client = new SnowLeopardPlaygroundClient({
+const client = new SnowLeopardClient({
   apiKey: 'your-api-key'
 });
 
 // Query your data in natural language
-const response = await client.retrieve(
-  'your-datafile-id',
-  'How many users signed up last month?'
-);
+const response = await client.retrieve({
+  userQuery: 'How many users signed up last month?',
+  datafileId: 'your-datafile-id',
+});
 
 console.log(response.data);
 
 // Stream responses
-for await (const chunk of client.response(
-  'your-datafile-id',
-  'Show me top 10 customers'
-)) {
+for await (const chunk of client.response({
+  userQuery: 'Show me top 10 customers',
+  datafileId: 'your-datafile-id',
+})) {
   console.log(chunk);
 }
 
@@ -57,7 +57,7 @@ await client.close();
 
       **Browser & Node.js** - Pass it directly to the client:
        ```typescript
-       new SnowLeopardPlaygroundClient({ apiKey: 'your-api-key' })
+       new SnowLeopardClient({ apiKey: 'your-api-key' })
        ```
 
    >    **Note**: In browser environments, you must pass the API key in the constructor options. Environment variables are only supported in Node.js.
@@ -67,22 +67,22 @@ await client.close();
 ### Basic Usage
 
 ```typescript
-import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
+import { SnowLeopardClient } from '@snowleopard-ai/client';
 
-const client = new SnowLeopardPlaygroundClient();
+const client = new SnowLeopardClient();
 
 // Get data directly from a natural language query
-const response = await client.retrieve(
-  'datafile-id',
-  "What's the total revenue?"
-);
+const response = await client.retrieve({
+  userQuery: "What's the total revenue?",
+  datafileId: 'datafile-id',
+});
 console.log(response.data);
 
 // Stream natural language summary of live data
-for await (const chunk of client.response(
-  'datafile-id',
-  'Show me top 10 customers'
-)) {
+for await (const chunk of client.response({
+  userQuery: 'Show me top 10 customers',
+  datafileId: 'datafile-id',
+})) {
   console.log(chunk);
 }
 
@@ -94,17 +94,17 @@ await client.close();
 You can provide additional context with the `knownData` parameter:
 
 ```typescript
-const response = await client.retrieve(
-  'datafile-id',
-  'Show sales for this region',
-  { region: 'North America' }
-);
+const response = await client.retrieve({
+  userQuery: 'Show sales for this region',
+  knownData: { region: 'North America' },
+  datafileId: 'datafile-id',
+});
 ```
 
 ### Configuration Options
 
 ```typescript
-const client = new SnowLeopardPlaygroundClient({
+const client = new SnowLeopardClient({
   apiKey: 'your-api-key',          // Optional if SNOWLEOPARD_API_KEY is set
   baseURL: 'https://api.snowleopard.ai',  // Optional, defaults to production
   timeout: {
@@ -120,15 +120,15 @@ const client = new SnowLeopardPlaygroundClient({
 ### Error Handling
 
 ```typescript
-import { SnowLeopardPlaygroundClient } from '@snowleopard-ai/client';
+import { SnowLeopardClient } from '@snowleopard-ai/client';
 
-const client = new SnowLeopardPlaygroundClient({ apiKey: 'your-api-key' });
+const client = new SnowLeopardClient({ apiKey: 'your-api-key' });
 
 try {
-  const response = await client.retrieve(
-    'datafile-id',
-    'Your query here'
-  );
+  const response = await client.retrieve({
+    datafileId: 'datafile-id',
+    userQuery: 'Your query here'
+  });
 
   // Check response status
   if (response.responseStatus === 'SUCCESS') {
@@ -163,7 +163,7 @@ This package is designed to work in both Node.js and modern browsers:
 
 ## API Reference
 
-### SnowLeopardPlaygroundClient
+### SnowLeopardClient
 
 #### `constructor(options?)`
 
@@ -173,7 +173,7 @@ Create a new client instance.
 - `options.baseURL?: string` - Base API URL (defaults to `https://api.snowleopard.ai`)
 - `options.timeout?: TimeoutConfig` - Timeout configuration
 
-#### `retrieve(datafileId, userQuery, knownData?)`
+#### `retrieve({datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
 
 Retrieve data from a datafile using a natural language query.
 
@@ -182,7 +182,7 @@ Retrieve data from a datafile using a natural language query.
 - `knownData?: Record<string, any>` - Optional known data
 - Returns: `Promise<RetrieveResponseObjects>`
 
-#### `response(datafileId, userQuery, knownData?)`
+#### `response({datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
 
 Stream natural language summary responses from a datafile query.
 

@@ -1,13 +1,13 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { SnowLeopardPlaygroundClient } from '../client';
+import { SnowLeopardClient } from '../client';
 import { ResponseStatus } from '../models';
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
-describe('SnowLeopardPlaygroundClient', () => {
+describe('SnowLeopardClient', () => {
   const mockApiKey = 'test-api-key';
   const mockDatafileId = 'test-datafile-id';
   const mockQuery = 'How many users signed up?';
@@ -22,19 +22,19 @@ describe('SnowLeopardPlaygroundClient', () => {
 
   describe('constructor', () => {
     it('should create client with API key from options', () => {
-      const client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      const client = new SnowLeopardClient({ apiKey: mockApiKey });
       expect(client).toBeDefined();
     });
 
     it('should create client with API key from environment variable', () => {
       process.env.SNOWLEOPARD_API_KEY = mockApiKey;
-      const client = new SnowLeopardPlaygroundClient();
+      const client = new SnowLeopardClient();
       expect(client).toBeDefined();
     });
 
     it('should use custom baseURL when provided', () => {
       const customBaseURL = 'https://custom.api.snowleopard.ai';
-      const client = new SnowLeopardPlaygroundClient({
+      const client = new SnowLeopardClient({
         apiKey: mockApiKey,
         baseURL: customBaseURL,
       });
@@ -44,12 +44,12 @@ describe('SnowLeopardPlaygroundClient', () => {
     it('should use baseURL from environment variable', () => {
       const envBaseURL = 'https://env.api.snowleopard.ai';
       process.env.SNOWLEOPARD_LOC = envBaseURL;
-      const client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      const client = new SnowLeopardClient({ apiKey: mockApiKey });
       expect(client).toBeDefined();
     });
 
     it('should use custom timeout configuration', () => {
-      const client = new SnowLeopardPlaygroundClient({
+      const client = new SnowLeopardClient({
         apiKey: mockApiKey,
         timeout: {
           connect: 10000,
@@ -62,16 +62,16 @@ describe('SnowLeopardPlaygroundClient', () => {
 
     it('should throw error when API key is not provided', () => {
       expect(() => {
-        new SnowLeopardPlaygroundClient();
+        new SnowLeopardClient();
       }).toThrow('Missing required argument "apiKey"');
     });
   });
 
   describe('retrieve', () => {
-    let client: SnowLeopardPlaygroundClient;
+    let client: SnowLeopardClient;
 
     beforeEach(() => {
-      client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      client = new SnowLeopardClient({ apiKey: mockApiKey });
     });
 
     it('should successfully retrieve data', async () => {
@@ -99,10 +99,57 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue(mockData),
       });
 
-      const result = await client.retrieve(mockDatafileId, mockQuery);
+      const result = await client.retrieve({
+        userQuery: mockQuery,
+        datafileId: mockDatafileId,
+      });
 
       expect(global.fetch).toHaveBeenCalledWith(
         `https://api.snowleopard.ai/datafiles/${mockDatafileId}/retrieve`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userQuery: mockQuery }),
+        }),
+      );
+      expect(result).toEqual(mockData);
+      expect(result.responseStatus).toBe(ResponseStatus.SUCCESS);
+    });
+
+    it('should successfully retrieve data without datafile id', async () => {
+      const mockData = {
+        __type__: 'retrieveResponse',
+        callId: 'test-call-id',
+        responseStatus: ResponseStatus.SUCCESS,
+        data: [
+          {
+            __type__: 'schemaData',
+            schemaId: 'schema-1',
+            schemaType: 'table',
+            query: 'SELECT * FROM users',
+            rows: [{ id: 1, name: 'John' }],
+            querySummary: {},
+            rowMax: 100,
+            isTrimmed: false,
+          },
+        ],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue(mockData),
+      });
+
+      const result = await client.retrieve({
+        userQuery: mockQuery,
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/retrieve`,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -131,7 +178,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue(mockData),
       });
 
-      await client.retrieve(mockDatafileId, mockQuery, knownData);
+      await client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery, knownData: knownData });
 
       expect(global.fetch).toHaveBeenCalledWith(
         `https://api.snowleopard.ai/datafiles/${mockDatafileId}/retrieve`,
@@ -156,7 +203,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue(mockData),
       });
 
-      const result = await client.retrieve(mockDatafileId, mockQuery);
+      const result = await client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery });
 
       expect(result.responseStatus).toBe(ResponseStatus.NOT_FOUND_IN_SCHEMA);
     });
@@ -169,14 +216,18 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('HTTP Error: 500');
+      await expect(client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery })).rejects.toThrow(
+        'HTTP Error: 500',
+      );
     });
 
     it('should handle network errors', async () => {
       const networkError = new Error('Network Error');
       (global.fetch as jest.Mock).mockRejectedValue(networkError);
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('Network Error');
+      await expect(client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery })).rejects.toThrow(
+        'Network Error',
+      );
     });
 
     it('should handle non-200/409 status codes', async () => {
@@ -186,15 +237,17 @@ describe('SnowLeopardPlaygroundClient', () => {
         json: jest.fn().mockResolvedValue({}),
       });
 
-      await expect(client.retrieve(mockDatafileId, mockQuery)).rejects.toThrow('HTTP Error: 404');
+      await expect(client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery })).rejects.toThrow(
+        'HTTP Error: 404',
+      );
     });
   });
 
   describe('response (streaming)', () => {
-    let client: SnowLeopardPlaygroundClient;
+    let client: SnowLeopardClient;
 
     beforeEach(() => {
-      client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      client = new SnowLeopardClient({ apiKey: mockApiKey });
     });
 
     it('should stream responses in Node.js environment', async () => {
@@ -241,7 +294,7 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(mockDatafileId, mockQuery)) {
+      for await (const chunk of client.response({ datafileId: mockDatafileId, userQuery: mockQuery })) {
         chunks.push(chunk);
       }
 
@@ -282,7 +335,11 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(mockDatafileId, mockQuery, knownData)) {
+      for await (const chunk of client.response({
+        datafileId: mockDatafileId,
+        userQuery: mockQuery,
+        knownData: knownData,
+      })) {
         chunks.push(chunk);
       }
 
@@ -313,7 +370,7 @@ describe('SnowLeopardPlaygroundClient', () => {
       });
 
       const chunks = [];
-      for await (const chunk of client.response(mockDatafileId, mockQuery)) {
+      for await (const chunk of client.response({ datafileId: mockDatafileId, userQuery: mockQuery })) {
         chunks.push(chunk);
       }
 
@@ -324,7 +381,7 @@ describe('SnowLeopardPlaygroundClient', () => {
     it('should handle streaming errors', async () => {
       (global.fetch as jest.Mock).mockRejectedValue(new Error('Network Error'));
 
-      const generator = client.response(mockDatafileId, mockQuery);
+      const generator = client.response({ datafileId: mockDatafileId, userQuery: mockQuery });
 
       await expect(generator.next()).rejects.toThrow('Network Error');
     });
@@ -336,7 +393,7 @@ describe('SnowLeopardPlaygroundClient', () => {
         body: null,
       });
 
-      const generator = client.response(mockDatafileId, mockQuery);
+      const generator = client.response({ datafileId: mockDatafileId, userQuery: mockQuery });
 
       await expect(generator.next()).rejects.toThrow('HTTP Error: 500');
     });
@@ -344,7 +401,7 @@ describe('SnowLeopardPlaygroundClient', () => {
 
   describe('close', () => {
     it('should close without errors', async () => {
-      const client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      const client = new SnowLeopardClient({ apiKey: mockApiKey });
 
       await expect(client.close()).resolves.toBeUndefined();
     });
