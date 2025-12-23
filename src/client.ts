@@ -9,24 +9,24 @@ export interface TimeoutConfig {
   write?: number;
 }
 
-export interface SnowLeopardPlaygroundClientOptions {
+export interface SnowLeopardClientOptions {
   apiKey?: string;
   timeout?: TimeoutConfig;
   baseURL?: string;
 }
 
-export interface SnowLeopardPlaygroundClientArgs {
+export interface SnowLeopardClientArgs {
   userQuery: string,
-  datafileId?: string,
   knownData?: Record<string, any>,
+  datafileId?: string,
 }
 
 /**
- * Client for Snow Leopard Playground API
+ * Client for Snow Leopard API
  *
  * @example
  * ```typescript
- * const client = new SnowLeopardPlaygroundClient({ apiKey: 'your-api-key' });
+ * const client = new SnowLeopardClient({ apiKey: 'your-api-key' });
  *
  * // Query your data
  * const response = await client.retrieve({datafileId: 'datafile-id', userQuery: 'How many users signed up?'});
@@ -40,12 +40,12 @@ export interface SnowLeopardPlaygroundClientArgs {
  * await client.close();
  * ```
  */
-export class SnowLeopardPlaygroundClient {
+export class SnowLeopardClient {
   private baseURL: string;
   private apiKey: string;
   private timeout: { connect: number; read: number; write: number };
 
-  constructor(options?: SnowLeopardPlaygroundClientOptions) {
+  constructor(options?: SnowLeopardClientOptions) {
     // Try to get API key from options, then environment variable (Node.js only)
     const apiKey = options?.apiKey || (typeof process !== 'undefined' && process.env?.SNOWLEOPARD_API_KEY);
 
@@ -114,13 +114,13 @@ export class SnowLeopardPlaygroundClient {
   /**
    * Retrieve data from a datafile using a natural language query
    *
+   * @param options - Query options
+   * @param options.datafileId - The ID of the datafile to query
+   * @param options.userQuery - Natural language query
+   * @param options.knownData - Optional known data to include in the query
    * @returns Promise resolving to RetrieveResponse object
-   * @param options
-   *   datafileId - The ID of the datafile to query
-   *   userQuery - Natural language query
-   *   knownData - Optional known data to include in the query
    */
-  async retrieve(options: SnowLeopardPlaygroundClientArgs): Promise<RetrieveResponseObjects> {
+  async retrieve(options: SnowLeopardClientArgs): Promise<RetrieveResponseObjects> {
     try {
       const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'retrieve')}`;
       const response = await this.fetchWithTimeout(
@@ -156,13 +156,13 @@ export class SnowLeopardPlaygroundClient {
   /**
    * Stream natural language summary responses from a datafile query
    *
+   * @param options - Query options
+   * @param options.datafileId - The ID of the datafile to query
+   * @param options.userQuery - Natural language query
+   * @param options.knownData - Optional known data to include in the query
    * @returns AsyncGenerator yielding response chunks
-   * @param options
-   *   datafileId - The ID of the datafile to query
-   *   userQuery - Natural language query
-   *   knownData - Optional known data to include in the query
    */
-  async *response(options: SnowLeopardPlaygroundClientArgs): AsyncGenerator<ResponseDataObjects, void, undefined> {
+  async *response(options: SnowLeopardClientArgs): AsyncGenerator<ResponseDataObjects, void, undefined> {
     try {
       const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'response')}`;
       const response = await this.fetchWithTimeout(

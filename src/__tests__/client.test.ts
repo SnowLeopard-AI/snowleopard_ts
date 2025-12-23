@@ -1,13 +1,13 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { SnowLeopardPlaygroundClient } from '../client';
+import { SnowLeopardClient } from '../client';
 import { ResponseStatus } from '../models';
 
 // Mock fetch globally
 global.fetch = jest.fn();
 
-describe('SnowLeopardPlaygroundClient', () => {
+describe('SnowLeopardClient', () => {
   const mockApiKey = 'test-api-key';
   const mockDatafileId = 'test-datafile-id';
   const mockQuery = 'How many users signed up?';
@@ -22,19 +22,19 @@ describe('SnowLeopardPlaygroundClient', () => {
 
   describe('constructor', () => {
     it('should create client with API key from options', () => {
-      const client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      const client = new SnowLeopardClient({ apiKey: mockApiKey });
       expect(client).toBeDefined();
     });
 
     it('should create client with API key from environment variable', () => {
       process.env.SNOWLEOPARD_API_KEY = mockApiKey;
-      const client = new SnowLeopardPlaygroundClient();
+      const client = new SnowLeopardClient();
       expect(client).toBeDefined();
     });
 
     it('should use custom baseURL when provided', () => {
       const customBaseURL = 'https://custom.api.snowleopard.ai';
-      const client = new SnowLeopardPlaygroundClient({
+      const client = new SnowLeopardClient({
         apiKey: mockApiKey,
         baseURL: customBaseURL,
       });
@@ -44,12 +44,12 @@ describe('SnowLeopardPlaygroundClient', () => {
     it('should use baseURL from environment variable', () => {
       const envBaseURL = 'https://env.api.snowleopard.ai';
       process.env.SNOWLEOPARD_LOC = envBaseURL;
-      const client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      const client = new SnowLeopardClient({ apiKey: mockApiKey });
       expect(client).toBeDefined();
     });
 
     it('should use custom timeout configuration', () => {
-      const client = new SnowLeopardPlaygroundClient({
+      const client = new SnowLeopardClient({
         apiKey: mockApiKey,
         timeout: {
           connect: 10000,
@@ -62,16 +62,16 @@ describe('SnowLeopardPlaygroundClient', () => {
 
     it('should throw error when API key is not provided', () => {
       expect(() => {
-        new SnowLeopardPlaygroundClient();
+        new SnowLeopardClient();
       }).toThrow('Missing required argument "apiKey"');
     });
   });
 
   describe('retrieve', () => {
-    let client: SnowLeopardPlaygroundClient;
+    let client: SnowLeopardClient;
 
     beforeEach(() => {
-      client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      client = new SnowLeopardClient({ apiKey: mockApiKey });
     });
 
     it('should successfully retrieve data', async () => {
@@ -240,10 +240,10 @@ describe('SnowLeopardPlaygroundClient', () => {
   });
 
   describe('response (streaming)', () => {
-    let client: SnowLeopardPlaygroundClient;
+    let client: SnowLeopardClient;
 
     beforeEach(() => {
-      client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      client = new SnowLeopardClient({ apiKey: mockApiKey });
     });
 
     it('should stream responses in Node.js environment', async () => {
@@ -393,7 +393,7 @@ describe('SnowLeopardPlaygroundClient', () => {
 
   describe('close', () => {
     it('should close without errors', async () => {
-      const client = new SnowLeopardPlaygroundClient({ apiKey: mockApiKey });
+      const client = new SnowLeopardClient({ apiKey: mockApiKey });
 
       await expect(client.close()).resolves.toBeUndefined();
     });
