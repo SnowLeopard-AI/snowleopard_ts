@@ -16,9 +16,9 @@ export interface SnowLeopardClientOptions {
 }
 
 export interface SnowLeopardClientArgs {
-  userQuery: string,
-  knownData?: Record<string, any>,
-  datafileId?: string,
+  userQuery: string;
+  knownData?: Record<string, any>;
+  datafileId?: string;
 }
 
 /**
