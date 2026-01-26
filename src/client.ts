@@ -1,7 +1,7 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { parse, RetrieveResponseObjects, ResponseDataObjects } from './models.js';
+import { parse, ResponseDataObjects, RetrieveResponseObjects } from './models.js';
 
 export interface TimeoutConfig {
   connect?: number;
@@ -19,6 +19,18 @@ export interface SnowLeopardClientArgs {
   userQuery: string;
   knownData?: Record<string, any>;
   datafileId?: string;
+}
+
+export class HttpError extends Error {
+  readonly response: Response;
+  readonly status: number;
+
+  constructor(response: Response) {
+    super(`HTTP Error: ${response.status}`);
+    this.name = 'HttpError';
+    this.response = response;
+    this.status = response.status;
+  }
 }
 
 /**
@@ -88,18 +100,17 @@ export class SnowLeopardClient {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const response = await fetch(url, {
+      return await fetch(url, {
         ...options,
         signal: controller.signal,
       });
-      clearTimeout(timeoutId);
-      return response;
     } catch (error: any) {
-      clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
         throw new Error(`Request timeout after ${timeoutMs}ms`);
       }
       throw error;
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
@@ -121,36 +132,26 @@ export class SnowLeopardClient {
    * @returns Promise resolving to RetrieveResponse object
    */
   async retrieve(options: SnowLeopardClientArgs): Promise<RetrieveResponseObjects> {
-    try {
-      const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'retrieve')}`;
-      const response = await this.fetchWithTimeout(
-        url,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
+    const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'retrieve')}`;
+    const response = await this.fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
         },
-        this.timeout.read,
-      );
+        body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
+      },
+      this.timeout.read,
+    );
 
-      if (response.status !== 200 && response.status !== 409) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return this.parseRetrieve(data);
-    } catch (error: any) {
-      if (error.message && error.message.includes('HTTP Error:')) {
-        throw error;
-      }
-      if (error.message && error.message.includes('Request timeout')) {
-        throw error;
-      }
-      throw error;
+    if (!response.ok && response.status !== 409) {
+      throw new HttpError(response);
     }
+
+    const data = await response.json();
+    return this.parseRetrieve(data);
   }
 
   /**
@@ -163,74 +164,64 @@ export class SnowLeopardClient {
    * @returns AsyncGenerator yielding response chunks
    */
   async *response(options: SnowLeopardClientArgs): AsyncGenerator<ResponseDataObjects, void, undefined> {
-    try {
-      const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'response')}`;
-      const response = await this.fetchWithTimeout(
-        url,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${this.apiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
+    const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'response')}`;
+    const response = await this.fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
         },
-        this.timeout.read,
-      );
+        body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
+      },
+      this.timeout.read,
+    );
 
-      if (response.status !== 200) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
+    if (!response.ok) {
+      throw new HttpError(response);
+    }
 
-      if (!response.body) {
-        throw new Error('Response body is null');
-      }
+    if (!response.body) {
+      throw new Error('Response body missing');
+    }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop() || '';
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
 
-          for (const line of lines) {
-            if (line.trim()) {
-              try {
-                const parsed = JSON.parse(line);
-                yield parse(parsed);
-              } catch (parseError) {
-                console.error('Failed to parse line:', line, parseError);
-              }
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const parsed = JSON.parse(line);
+              yield parse(parsed);
+            } catch (parseError) {
+              console.error('Failed to parse line:', line, parseError);
             }
           }
         }
-      } finally {
-        reader.releaseLock();
       }
+    } finally {
+      reader.releaseLock();
+    }
 
-      // Process any remaining data in the buffer
-      if (buffer.trim()) {
-        try {
-          const parsed = JSON.parse(buffer);
-          yield parse(parsed);
-        } catch (parseError) {
-          console.error('Failed to parse remaining buffer:', buffer, parseError);
-        }
+    // Process any remaining data in the buffer
+    if (buffer.trim()) {
+      try {
+        const parsed = JSON.parse(buffer);
+        yield parse(parsed);
+      } catch (parseError) {
+        console.error('Failed to parse remaining buffer:', buffer, parseError);
       }
-    } catch (error: any) {
-      if (error.message && error.message.includes('HTTP Error:')) {
-        throw error;
-      }
-      if (error.message && error.message.includes('Request timeout')) {
-        throw error;
-      }
-      throw error;
     }
   }
 
