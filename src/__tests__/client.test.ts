@@ -1,7 +1,7 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { SnowLeopardClient } from '../client';
+import { HttpError, SnowLeopardClient } from '../client';
 import { ResponseStatus } from '../models';
 
 // Mock fetch globally
@@ -241,6 +241,30 @@ describe('SnowLeopardClient', () => {
         'HTTP Error: 404',
       );
     });
+
+    it('should throw HttpError with response object on error', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        headers: new Headers({ 'x-error-code': 'INVALID_API_KEY' }),
+        json: jest.fn().mockResolvedValue({ error: 'Invalid API key' }),
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+      try {
+        await client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery });
+        fail('Expected HttpError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        const httpError = error as HttpError;
+        expect(httpError.status).toBe(403);
+        expect(httpError.response).toBe(mockResponse);
+        expect(httpError.name).toBe('HttpError');
+        expect(httpError.message).toBe('HTTP Error: 403');
+      }
+    });
   });
 
   describe('response (streaming)', () => {
@@ -396,6 +420,31 @@ describe('SnowLeopardClient', () => {
       const generator = client.response({ datafileId: mockDatafileId, userQuery: mockQuery });
 
       await expect(generator.next()).rejects.toThrow('HTTP Error: 500');
+    });
+
+    it('should throw HttpError with response object on streaming error', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 401,
+        statusText: 'Unauthorized',
+        headers: new Headers({ 'www-authenticate': 'Bearer' }),
+        body: null,
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+      const generator = client.response({ datafileId: mockDatafileId, userQuery: mockQuery });
+
+      try {
+        await generator.next();
+        fail('Expected HttpError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        const httpError = error as HttpError;
+        expect(httpError.status).toBe(401);
+        expect(httpError.response).toBe(mockResponse);
+        expect(httpError.name).toBe('HttpError');
+      }
     });
   });
 
