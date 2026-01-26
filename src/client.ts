@@ -130,6 +130,7 @@ export class SnowLeopardClient {
    * @param options.userQuery - Natural language query
    * @param options.knownData - Optional known data to include in the query
    * @returns Promise resolving to RetrieveResponse object
+   * @throws {HttpError} When the server returns a non 2xx/409 status
    */
   async retrieve(options: SnowLeopardClientArgs): Promise<RetrieveResponseObjects> {
     const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'retrieve')}`;
@@ -162,6 +163,7 @@ export class SnowLeopardClient {
    * @param options.userQuery - Natural language query
    * @param options.knownData - Optional known data to include in the query
    * @returns AsyncGenerator yielding response chunks
+   * @throws {HttpError} When the server returns a non-2xx status
    */
   async *response(options: SnowLeopardClientArgs): AsyncGenerator<ResponseDataObjects, void, undefined> {
     const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'response')}`;
