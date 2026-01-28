@@ -190,16 +190,13 @@ describe('SnowLeopardClient', () => {
     });
 
     it('should handle empty userQuery', async () => {
-      const cases = [
-        '',
-        ' ',
-      ];
+      const cases = ['', ' '];
 
       cases.forEach(async (testCase) => {
-        await expect(client.retrieve({userQuery: testCase})).rejects.toThrow(
-          'userQuery field must not be empty/whitespace'
+        await expect(client.retrieve({ userQuery: testCase })).rejects.toThrow(
+          'userQuery field must not be empty/whitespace',
         );
-      })
+      });
     });
 
     it('should handle 409 conflict status', async () => {
@@ -424,18 +421,13 @@ describe('SnowLeopardClient', () => {
     });
 
     it('should handle empty userQuery', async () => {
-      const cases = [
-        '',
-        ' ',
-      ];
+      const cases = ['', ' '];
 
       cases.forEach(async (testCase) => {
-        const generator = client.response({userQuery: testCase});
+        const generator = client.response({ userQuery: testCase });
 
-        await expect(generator.next()).rejects.toThrow(
-          'userQuery field must not be empty/whitespace'
-        );
-      })
+        await expect(generator.next()).rejects.toThrow('userQuery field must not be empty/whitespace');
+      });
     });
 
     it('should handle non-200 status in streaming', async () => {

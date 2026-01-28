@@ -155,7 +155,7 @@ export class SnowLeopardClient {
     }
 
     const data = await response.json();
-    let resultObj = this.parseRetrieve(data);
+    const resultObj = this.parseRetrieve(data);
 
     if (isAPIError(resultObj) && response.status === 400) {
       throw new Error(resultObj.description);
