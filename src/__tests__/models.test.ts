@@ -1,8 +1,9 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { parse, ResponseStatus } from '../models';
+import { isAPIError, parse, ResponseStatus } from '../models';
 import type {
+  APIError,
   SchemaData,
   ErrorSchemaData,
   RetrieveResponse,
@@ -16,12 +17,16 @@ describe('models', () => {
   describe('ResponseStatus enum', () => {
     it('should have all expected status values', () => {
       expect(ResponseStatus.SUCCESS).toBe('SUCCESS');
+      expect(ResponseStatus.BAD_REQUEST).toBe('BAD_REQUEST');
       expect(ResponseStatus.NOT_FOUND_IN_SCHEMA).toBe('NOT_FOUND_IN_SCHEMA');
       expect(ResponseStatus.UNKNOWN).toBe('UNKNOWN');
       expect(ResponseStatus.INTERNAL_SERVER_ERROR).toBe('INTERNAL_SERVER_ERROR');
       expect(ResponseStatus.AUTHORIZATION_FAILED).toBe('AUTHORIZATION_FAILED');
       expect(ResponseStatus.LLM_ERROR).toBe('LLM_ERROR');
       expect(ResponseStatus.LLM_TOKEN_LIMIT_REACHED).toBe('LLM_TOKEN_LIMIT_REACHED');
+      expect(ResponseStatus.DB_ERROR).toBe('DB_ERROR');
+      expect(ResponseStatus.DB_CONNECTION_ERROR).toBe('DB_CONNECTION_ERROR');
+      expect(ResponseStatus.DB_SYNTAX_ERROR).toBe('DB_SYNTAX_ERROR');
     });
   });
 
@@ -48,18 +53,30 @@ describe('models', () => {
       expect(result).toEqual(obj);
     });
 
+    it('should identify apiError objects', () => {
+      const validObj: APIError = {
+        __type__: 'apiError',
+        callId: 'call-123',
+        responseStatus: ResponseStatus.BAD_REQUEST,
+        description: 'Bad Request',
+      };
+      expect(isAPIError(validObj)).toEqual(true);
+
+      const invalidObjs = [
+        {
+          __type__: '',
+        },
+        {},
+      ];
+      invalidObjs.forEach((obj) => {
+        expect(isAPIError(obj)).toEqual(false);
+      });
+    });
+
     it('should parse all valid response types', () => {
       const validTypes = [
         { __type__: 'apiError', callId: 'call-1', responseStatus: 'ERROR', description: 'test' },
         { __type__: 'retrieveResponse', callId: 'call-2', data: [], responseStatus: ResponseStatus.SUCCESS },
-        {
-          __type__: 'errorSchemaData',
-          schemaType: 'table',
-          schemaId: 'schema-1',
-          query: 'SELECT',
-          error: 'error',
-          querySummary: {},
-        },
         { __type__: 'responseStart', callId: 'call-3', userQuery: 'test query' },
         { __type__: 'responseData', callId: 'call-4', data: [] },
         {

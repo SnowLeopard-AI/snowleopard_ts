@@ -1,7 +1,7 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { parse, ResponseDataObjects, RetrieveResponseObjects } from './models.js';
+import { isAPIError, parse, ResponseDataObjects, RetrieveResponseObjects } from './models.js';
 
 export interface TimeoutConfig {
   connect?: number;
@@ -88,6 +88,9 @@ export class SnowLeopardClient {
   }
 
   private buildRequestBody(userQuery: string, knownData?: Record<string, any>): Record<string, any> {
+    if (!userQuery.trim()) {
+      throw new Error('userQuery field must not be empty/whitespace');
+    }
     const body: Record<string, any> = { userQuery };
     if (knownData !== undefined) {
       body.knownData = knownData;
@@ -147,12 +150,18 @@ export class SnowLeopardClient {
       this.timeout.read,
     );
 
-    if (!response.ok && response.status !== 409) {
+    if (!response.ok && response.status !== 400 && response.status !== 409) {
       throw new HttpError(response);
     }
 
     const data = await response.json();
-    return this.parseRetrieve(data);
+    const resultObj = this.parseRetrieve(data);
+
+    if (isAPIError(resultObj) && response.status === 400) {
+      throw new Error(resultObj.description);
+    }
+
+    return resultObj;
   }
 
   /**
@@ -180,7 +189,7 @@ export class SnowLeopardClient {
       this.timeout.read,
     );
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 400) {
       throw new HttpError(response);
     }
 
@@ -191,6 +200,7 @@ export class SnowLeopardClient {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
+    let resultObj = null;
 
     try {
       while (true) {
@@ -205,10 +215,14 @@ export class SnowLeopardClient {
           if (line.trim()) {
             try {
               const parsed = JSON.parse(line);
-              yield parse(parsed);
+              resultObj = parse(parsed);
             } catch (parseError) {
               console.error('Failed to parse line:', line, parseError);
             }
+            if (isAPIError(resultObj) && response.status === 400) {
+              throw new Error(resultObj.description);
+            }
+            yield resultObj;
           }
         }
       }

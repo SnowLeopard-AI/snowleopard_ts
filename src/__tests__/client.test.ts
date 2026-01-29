@@ -189,6 +189,16 @@ describe('SnowLeopardClient', () => {
       );
     });
 
+    it('should handle empty userQuery', async () => {
+      const cases = ['', ' '];
+
+      cases.forEach(async (testCase) => {
+        await expect(client.retrieve({ userQuery: testCase })).rejects.toThrow(
+          'userQuery field must not be empty/whitespace',
+        );
+      });
+    });
+
     it('should handle 409 conflict status', async () => {
       const mockData = {
         __type__: 'retrieveResponse',
@@ -408,6 +418,16 @@ describe('SnowLeopardClient', () => {
       const generator = client.response({ datafileId: mockDatafileId, userQuery: mockQuery });
 
       await expect(generator.next()).rejects.toThrow('Network Error');
+    });
+
+    it('should handle empty userQuery', async () => {
+      const cases = ['', ' '];
+
+      cases.forEach(async (testCase) => {
+        const generator = client.response({ userQuery: testCase });
+
+        await expect(generator.next()).rejects.toThrow('userQuery field must not be empty/whitespace');
+      });
     });
 
     it('should handle non-200 status in streaming', async () => {
