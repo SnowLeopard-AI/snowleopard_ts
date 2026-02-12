@@ -3,6 +3,7 @@
 
 export enum ResponseStatus {
   SUCCESS = 'SUCCESS',
+  BAD_REQUEST = 'BAD_REQUEST',
   UNABLE_TO_UNDERSTAND_QUESTION = "UNABLE_TO_UNDERSTAND_QUESTION",
   NOT_FOUND_IN_SCHEMA = 'NOT_FOUND_IN_SCHEMA',
   UNKNOWN = 'UNKNOWN',
@@ -10,6 +11,16 @@ export enum ResponseStatus {
   AUTHORIZATION_FAILED = 'AUTHORIZATION_FAILED',
   LLM_ERROR = 'LLM_ERROR',
   LLM_TOKEN_LIMIT_REACHED = 'LLM_TOKEN_LIMIT_REACHED',
+  DB_ERROR = 'DB_ERROR',
+  DB_CONNECTION_ERROR = 'DB_CONNECTION_ERROR',
+  DB_SYNTAX_ERROR = 'DB_SYNTAX_ERROR',
+}
+
+export interface APIError {
+  __type__: 'apiError';
+  callId: string;
+  responseStatus: string;
+  description: string;
 }
 
 export interface SchemaData {
@@ -42,13 +53,6 @@ export interface RetrieveResponse {
   responseStatus: ResponseStatus;
 }
 
-export interface RetrieveResponseError {
-  __type__: 'apiError';
-  callId: string;
-  responseStatus: string;
-  description: string;
-}
-
 export interface ResponseStart {
   __type__: 'responseStart';
   callId: string;
@@ -76,10 +80,14 @@ export interface ResponseLLMResult {
   llmResponse: Record<string, any>;
 }
 
-export type RetrieveResponseObjects = RetrieveResponse | RetrieveResponseError;
+export function isAPIError(obj: any): obj is APIError {
+  return '__type__' in obj && obj.__type__ === 'apiError';
+}
+
+export type RetrieveResponseObjects = RetrieveResponse | APIError;
 
 export type ResponseDataObjects =
-  | ErrorSchemaData
+  | APIError
   | ResponseStart
   | ResponseData
   | EarlyTermination
@@ -94,11 +102,9 @@ function parseType(obj: any): BaseResponseObject {
 
   switch (obj.__type__) {
     case 'apiError':
-      return obj as RetrieveResponseError;
+      return obj as APIError;
     case 'retrieveResponse':
       return obj as RetrieveResponse;
-    case 'errorSchemaData':
-      return obj as ErrorSchemaData;
     case 'responseStart':
       return obj as ResponseStart;
     case 'responseData':

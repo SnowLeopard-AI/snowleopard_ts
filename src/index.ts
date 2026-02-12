@@ -6,7 +6,7 @@ export {
   SchemaData,
   ErrorSchemaData,
   RetrieveResponse,
-  RetrieveResponseError,
+  APIError,
   ResponseStart,
   ResponseData,
   EarlyTermination,
