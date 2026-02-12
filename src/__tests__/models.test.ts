@@ -16,6 +16,7 @@ describe('models', () => {
   describe('ResponseStatus enum', () => {
     it('should have all expected status values', () => {
       expect(ResponseStatus.SUCCESS).toBe('SUCCESS');
+      expect(ResponseStatus.UNABLE_TO_UNDERSTAND_QUESTION).toBe('UNABLE_TO_UNDERSTAND_QUESTION');
       expect(ResponseStatus.NOT_FOUND_IN_SCHEMA).toBe('NOT_FOUND_IN_SCHEMA');
       expect(ResponseStatus.UNKNOWN).toBe('UNKNOWN');
       expect(ResponseStatus.INTERNAL_SERVER_ERROR).toBe('INTERNAL_SERVER_ERROR');
