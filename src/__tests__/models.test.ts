@@ -18,6 +18,7 @@ describe('models', () => {
     it('should have all expected status values', () => {
       expect(ResponseStatus.SUCCESS).toBe('SUCCESS');
       expect(ResponseStatus.BAD_REQUEST).toBe('BAD_REQUEST');
+      expect(ResponseStatus.UNABLE_TO_UNDERSTAND_QUESTION).toBe('UNABLE_TO_UNDERSTAND_QUESTION');
       expect(ResponseStatus.NOT_FOUND_IN_SCHEMA).toBe('NOT_FOUND_IN_SCHEMA');
       expect(ResponseStatus.UNKNOWN).toBe('UNKNOWN');
       expect(ResponseStatus.INTERNAL_SERVER_ERROR).toBe('INTERNAL_SERVER_ERROR');
