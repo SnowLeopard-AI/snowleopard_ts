@@ -13,6 +13,7 @@ export interface SnowLeopardClientOptions {
   apiKey?: string;
   timeout?: TimeoutConfig;
   baseURL?: string;
+  defaultHeaders?: Record<string, string>;
 }
 
 export interface SnowLeopardClientArgs {
@@ -56,6 +57,7 @@ export class SnowLeopardClient {
   private baseURL: string;
   private apiKey: string;
   private timeout: { connect: number; read: number; write: number };
+  private defaultHeaders: Record<string, string>;
 
   constructor(options?: SnowLeopardClientOptions) {
     // Try to get API key from options, then environment variable (Node.js only)
@@ -77,6 +79,8 @@ export class SnowLeopardClient {
       options?.baseURL ||
       (typeof process !== 'undefined' && process.env?.SNOWLEOPARD_LOC) ||
       'https://api.snowleopard.ai';
+
+    this.defaultHeaders = options?.defaultHeaders ?? {};
   }
 
   private buildPath(datafileId: string | undefined, endpoint: string): string {
@@ -144,6 +148,7 @@ export class SnowLeopardClient {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          ...this.defaultHeaders,
         },
         body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
       },
@@ -183,6 +188,7 @@ export class SnowLeopardClient {
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json',
+          ...this.defaultHeaders,
         },
         body: JSON.stringify(this.buildRequestBody(options.userQuery, options.knownData)),
       },
