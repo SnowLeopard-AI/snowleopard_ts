@@ -470,9 +470,13 @@ describe('SnowLeopardClient', () => {
     it('should skip lines that fail to parse and not yield null', async () => {
       const mockBody = new ReadableStream({
         start(controller) {
-          controller.enqueue(new TextEncoder().encode('{"__type__":"responseStart","callId":"call-1","userQuery":"test"}\n'));
+          controller.enqueue(
+            new TextEncoder().encode('{"__type__":"responseStart","callId":"call-1","userQuery":"test"}\n'),
+          );
           controller.enqueue(new TextEncoder().encode('not valid json\n'));
-          controller.enqueue(new TextEncoder().encode('{"__type__":"responseStart","callId":"call-2","userQuery":"test"}\n'));
+          controller.enqueue(
+            new TextEncoder().encode('{"__type__":"responseStart","callId":"call-2","userQuery":"test"}\n'),
+          );
           controller.close();
         },
       });
