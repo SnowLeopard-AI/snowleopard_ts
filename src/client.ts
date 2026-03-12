@@ -224,6 +224,7 @@ export class SnowLeopardClient {
               resultObj = parse(parsed);
             } catch (parseError) {
               console.error('Failed to parse line:', line, parseError);
+              continue;
             }
             if (isAPIError(resultObj) && response.status === 400) {
               throw new Error(resultObj.description);

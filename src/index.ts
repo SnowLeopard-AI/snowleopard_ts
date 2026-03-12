@@ -1,6 +1,6 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
-export { SnowLeopardClient, TimeoutConfig } from './client.js';
+export { SnowLeopardClient, TimeoutConfig, HttpError } from './client.js';
 export {
   ResponseStatus,
   SchemaData,

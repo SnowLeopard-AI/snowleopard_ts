@@ -466,6 +466,37 @@ describe('SnowLeopardClient', () => {
         expect(httpError.name).toBe('HttpError');
       }
     });
+
+    it('should skip lines that fail to parse and not yield null', async () => {
+      const mockBody = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode('{"__type__":"responseStart","callId":"call-1","userQuery":"test"}\n'),
+          );
+          controller.enqueue(new TextEncoder().encode('not valid json\n'));
+          controller.enqueue(
+            new TextEncoder().encode('{"__type__":"responseStart","callId":"call-2","userQuery":"test"}\n'),
+          );
+          controller.close();
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: mockBody,
+      });
+
+      const chunks = [];
+      for await (const chunk of client.response({ datafileId: mockDatafileId, userQuery: mockQuery })) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toHaveLength(2);
+      expect(chunks[0].__type__).toBe('responseStart');
+      expect(chunks[1].__type__).toBe('responseStart');
+      chunks.forEach((chunk) => expect(chunk).not.toBeNull());
+    });
   });
 
   describe('close', () => {
