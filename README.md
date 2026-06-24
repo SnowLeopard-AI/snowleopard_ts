@@ -1,6 +1,8 @@
 # Snow Leopard SDK for TypeScript
 
-TypeScript client library for [Snow Leopard](https://try.snowleopard.ai) APIs.
+TypeScript client library for [Snow Leopard](https://cloud.snowleopard.ai) APIs.
+
+See our [API documentation](https://docs.snowleopard.ai) for more details.
 
 **Works in both Node.js and browser environments!**
 
@@ -28,7 +30,7 @@ const client = new SnowLeopardClient({
 // Query your data in natural language
 const response = await client.retrieve({
   userQuery: 'How many users signed up last month?',
-  datafileId: 'your-datafile-id',
+  instanceId: 'your-instance-id',
 });
 
 console.log(response.data);
@@ -36,7 +38,7 @@ console.log(response.data);
 // Stream responses
 for await (const chunk of client.response({
   userQuery: 'Show me top 10 customers',
-  datafileId: 'your-datafile-id',
+  instanceId: 'your-instance-id',
 })) {
   console.log(chunk);
 }
@@ -46,9 +48,8 @@ await client.close();
 
 ## Getting Started
 
-1. **Get your API key** from [https://auth.snowleopard.ai/account/api_keys](https://auth.snowleopard.ai/account/api_keys)
-2. **Upload your datafiles** at [https://try.snowleopard.ai](https://try.snowleopard.ai)
-3. **Set your API key**:
+1. **Try Snow Leopard here** [https://cloud.snowleopard.ai](https://cloud.snowleopard.ai)
+2. **Set your API key**:
    * Via environment variable:
       **Node.js** - 
        ```bash
@@ -74,14 +75,14 @@ const client = new SnowLeopardClient();
 // Get data directly from a natural language query
 const response = await client.retrieve({
   userQuery: "What's the total revenue?",
-  datafileId: 'datafile-id',
+  instanceId: 'instance-id',
 });
 console.log(response.data);
 
 // Stream natural language summary of live data
 for await (const chunk of client.response({
   userQuery: 'Show me top 10 customers',
-  datafileId: 'datafile-id',
+  instanceId: 'instance-id',
 })) {
   console.log(chunk);
 }
@@ -97,7 +98,7 @@ You can provide additional context with the `knownData` parameter:
 const response = await client.retrieve({
   userQuery: 'Show sales for this region',
   knownData: { region: 'North America' },
-  datafileId: 'datafile-id',
+  instanceId: 'instance-id',
 });
 ```
 
@@ -126,7 +127,7 @@ const client = new SnowLeopardClient({ apiKey: 'your-api-key' });
 
 try {
   const response = await client.retrieve({
-    datafileId: 'datafile-id',
+    instanceId: 'instance-id',
     userQuery: 'Your query here'
   });
 
@@ -173,20 +174,22 @@ Create a new client instance.
 - `options.baseURL?: string` - Base API URL (defaults to `https://api.snowleopard.ai`)
 - `options.timeout?: TimeoutConfig` - Timeout configuration
 
-#### `retrieve({datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
+#### `retrieve({instanceId: instanceId, datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
 
 Retrieve data from a datafile using a natural language query.
 
-- `datafileId: string` - The ID of the datafile to query
+- `instanceId: string` - (optional) The cloud.snowleopard.ai instanceId
+- `datafileId: string` - (optional) The try.snowleopard.ai datafileId
 - `userQuery: string` - Natural language query
 - `knownData?: Record<string, any>` - Optional known data
 - Returns: `Promise<RetrieveResponseObjects>`
 
-#### `response({datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
+#### `response({instanceId: instanceId, datafileId: datafileId, userQuery: userQuery, knownData: knownData?})`
 
 Stream natural language summary responses from a datafile query.
 
-- `datafileId: string` - The ID of the datafile to query
+- `instanceId: string` - (optional) The cloud.snowleopard.ai instanceId
+- `datafileId: string` - (optional) The try.snowleopard.ai datafileId
 - `userQuery: string` - Natural language query
 - `knownData?: Record<string, any>` - Optional known data
 - Returns: `AsyncGenerator<ResponseDataObjects>`
