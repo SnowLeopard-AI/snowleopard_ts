@@ -9,6 +9,7 @@ global.fetch = jest.fn();
 
 describe('SnowLeopardClient', () => {
   const mockApiKey = 'test-api-key';
+  const mockInstanceId = 'test-instance-id';
   const mockDatafileId = 'test-datafile-id';
   const mockQuery = 'How many users signed up?';
 
@@ -275,6 +276,55 @@ describe('SnowLeopardClient', () => {
         expect(httpError.message).toBe('HTTP Error: 403');
       }
     });
+
+    it('should retrieve data using instanceId URL path', async () => {
+      const mockData = {
+        __type__: 'retrieveResponse',
+        callId: 'test-call-id',
+        responseStatus: ResponseStatus.SUCCESS,
+        data: [],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue(mockData),
+      });
+
+      await client.retrieve({ instanceId: mockInstanceId, userQuery: mockQuery });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/retrieve`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ userQuery: mockQuery }),
+        }),
+      );
+    });
+
+    it('should prefer instanceId over datafileId when both are set', async () => {
+      const mockData = {
+        __type__: 'retrieveResponse',
+        callId: 'test-call-id',
+        responseStatus: ResponseStatus.SUCCESS,
+        data: [],
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: jest.fn().mockResolvedValue(mockData),
+      });
+
+      await client.retrieve({ instanceId: mockInstanceId, datafileId: mockDatafileId, userQuery: mockQuery });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/retrieve`,
+        expect.objectContaining({
+          method: 'POST',
+        }),
+      );
+    });
   });
 
   describe('response (streaming)', () => {
@@ -496,6 +546,40 @@ describe('SnowLeopardClient', () => {
       expect(chunks[0].__type__).toBe('responseStart');
       expect(chunks[1].__type__).toBe('responseStart');
       chunks.forEach((chunk) => expect(chunk).not.toBeNull());
+    });
+
+    it('should stream responses using instanceId URL path', async () => {
+      const mockBody = new ReadableStream({
+        start(controller) {
+          controller.enqueue(
+            new TextEncoder().encode(
+              JSON.stringify({ __type__: 'responseStart', callId: 'call-1', userQuery: mockQuery }) + '\n',
+            ),
+          );
+          controller.close();
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 200,
+        body: mockBody,
+      });
+
+      const chunks = [];
+      for await (const chunk of client.response({ instanceId: mockInstanceId, userQuery: mockQuery })) {
+        chunks.push(chunk);
+      }
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/response`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ userQuery: mockQuery }),
+        }),
+      );
+      expect(chunks).toHaveLength(1);
+      expect(chunks[0].__type__).toBe('responseStart');
     });
   });
 

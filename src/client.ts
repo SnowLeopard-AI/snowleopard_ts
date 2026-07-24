@@ -19,6 +19,9 @@ export interface SnowLeopardClientOptions {
 export interface SnowLeopardClientArgs {
   userQuery: string;
   knownData?: Record<string, any>;
+  /** (optional) The cloud.snowleopard.ai instanceId */
+  instanceId?: string;
+  /** (optional) The try.snowleopard.ai datafileId */
   datafileId?: string;
 }
 
@@ -42,11 +45,11 @@ export class HttpError extends Error {
  * const client = new SnowLeopardClient({ apiKey: 'your-api-key' });
  *
  * // Query your data
- * const response = await client.retrieve({datafileId: 'datafile-id', userQuery: 'How many users signed up?'});
+ * const response = await client.retrieve({instanceId: 'instance-id', userQuery: 'How many users signed up?'});
  * console.log(response.data);
  *
  * // Stream responses
- * for await (const chunk of client.response({datafileId: 'datafile-id', userQuery: 'Show top customers'})) {
+ * for await (const chunk of client.response({instanceId: 'instance-id', userQuery: 'Show top customers'})) {
  *   console.log(chunk);
  * }
  *
@@ -83,11 +86,17 @@ export class SnowLeopardClient {
     this.defaultHeaders = options?.defaultHeaders ?? {};
   }
 
-  private buildPath(datafileId: string | undefined, endpoint: string): string {
-    if (!datafileId) {
-      return endpoint;
-    } else {
+  private buildPath(
+    instanceId: string | undefined,
+    datafileId: string | undefined,
+    endpoint: string,
+  ): string {
+    if (instanceId) {
+      return `v1/instances/${instanceId}/${endpoint}`;
+    } else if (datafileId) {
       return `datafiles/${datafileId}/${endpoint}`;
+    } else {
+      return endpoint;
     }
   }
 
@@ -133,14 +142,15 @@ export class SnowLeopardClient {
    * Retrieve data from a datafile using a natural language query
    *
    * @param options - Query options
-   * @param options.datafileId - The ID of the datafile to query
+   * @param options.instanceId - (optional) The cloud.snowleopard.ai instanceId
+   * @param options.datafileId - (optional) The try.snowleopard.ai datafileId
    * @param options.userQuery - Natural language query
    * @param options.knownData - Optional known data to include in the query
    * @returns Promise resolving to RetrieveResponse object
    * @throws {HttpError} When the server returns a non 2xx/409 status
    */
   async retrieve(options: SnowLeopardClientArgs): Promise<RetrieveResponseObjects> {
-    const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'retrieve')}`;
+    const url = `${this.baseURL}/${this.buildPath(options.instanceId, options.datafileId, 'retrieve')}`;
     const response = await this.fetchWithTimeout(
       url,
       {
@@ -173,14 +183,15 @@ export class SnowLeopardClient {
    * Stream natural language summary responses from a datafile query
    *
    * @param options - Query options
-   * @param options.datafileId - The ID of the datafile to query
+   * @param options.instanceId - (optional) The cloud.snowleopard.ai instanceId
+   * @param options.datafileId - (optional) The try.snowleopard.ai datafileId
    * @param options.userQuery - Natural language query
    * @param options.knownData - Optional known data to include in the query
    * @returns AsyncGenerator yielding response chunks
    * @throws {HttpError} When the server returns a non-2xx status
    */
   async *response(options: SnowLeopardClientArgs): AsyncGenerator<ResponseDataObjects, void, undefined> {
-    const url = `${this.baseURL}/${this.buildPath(options.datafileId, 'response')}`;
+    const url = `${this.baseURL}/${this.buildPath(options.instanceId, options.datafileId, 'response')}`;
     const response = await this.fetchWithTimeout(
       url,
       {
