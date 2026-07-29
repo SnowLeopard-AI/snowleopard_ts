@@ -1,7 +1,14 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { isAPIError, parse, ResponseDataObjects, RetrieveResponseObjects } from './models.js';
+import {
+  FeedbackResponse,
+  isAPIError,
+  parse,
+  parseFeedback,
+  ResponseDataObjects,
+  RetrieveResponseObjects,
+} from './models.js';
 
 export interface TimeoutConfig {
   connect?: number;
@@ -23,6 +30,16 @@ export interface SnowLeopardClientArgs {
   instanceId?: string;
   /** (optional) The try.snowleopard.ai datafileId */
   datafileId?: string;
+}
+
+export interface SnowLeopardFeedbackArgs {
+  feedbackText: string;
+  /** The cloud.snowleopard.ai instanceId */
+  instanceId: string;
+  /** (optional) The datasource the feedback relates to */
+  datasourceId?: string;
+  /** (optional) The schema the feedback relates to */
+  schemaId?: string;
 }
 
 export class HttpError extends Error {
@@ -52,6 +69,9 @@ export class HttpError extends Error {
  * for await (const chunk of client.response({instanceId: 'instance-id', userQuery: 'Show top customers'})) {
  *   console.log(chunk);
  * }
+ *
+ * // Give Snow Leopard feedback in plain text for more accurate answers
+ * await client.feedback({instanceId: 'instance-id', feedbackText: 'Revenue is gross, before discounts.'});
  *
  * await client.close();
  * ```
@@ -107,6 +127,24 @@ export class SnowLeopardClient {
     const body: Record<string, any> = { userQuery };
     if (knownData !== undefined) {
       body.knownData = knownData;
+    }
+    return body;
+  }
+
+  private buildFeedbackBody(
+    feedbackText: string,
+    datasourceId?: string,
+    schemaId?: string,
+  ): Record<string, any> {
+    if (typeof feedbackText !== 'string' || !feedbackText.trim()) {
+      throw new Error('feedbackText field must not be empty/whitespace');
+    }
+    const body: Record<string, any> = { feedbackText };
+    if (datasourceId !== undefined) {
+      body.datasourceId = datasourceId;
+    }
+    if (schemaId !== undefined) {
+      body.schemaId = schemaId;
     }
     return body;
   }
@@ -257,6 +295,64 @@ export class SnowLeopardClient {
         console.error('Failed to parse remaining buffer:', buffer, parseError);
       }
     }
+  }
+
+  /**
+   * Give Snow Leopard feedback in plain text so it can understand your business logic and ontology
+   * better for more accurate answers.
+   *
+   * @param options - Feedback options
+   * @param options.feedbackText - Feedback text to record
+   * @param options.instanceId - The cloud.snowleopard.ai instanceId
+   * @param options.datasourceId - (optional) The datasource the feedback relates to
+   * @param options.schemaId - (optional) The schema the feedback relates to
+   * @returns Promise resolving to a FeedbackResponse object
+   * @throws {HttpError} When the server returns a non-2xx status, or a 400 whose body isn't a
+   *   recognized error shape
+   */
+  async feedback(options: SnowLeopardFeedbackArgs): Promise<FeedbackResponse> {
+    if (typeof options.instanceId !== 'string' || !options.instanceId.trim()) {
+      throw new Error('instanceId field must not be empty/whitespace');
+    }
+    // /feedback is not served by the datafile deployment, so datafileId is always undefined
+    const url = `${this.baseURL}/${this.buildPath(options.instanceId, undefined, 'feedback')}`;
+    const response = await this.fetchWithTimeout(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          'Content-Type': 'application/json',
+          ...this.defaultHeaders,
+        },
+        body: JSON.stringify(
+          this.buildFeedbackBody(options.feedbackText, options.datasourceId, options.schemaId),
+        ),
+      },
+      this.timeout.read,
+    );
+
+    if (!response.ok && response.status !== 400) {
+      throw new HttpError(response);
+    }
+
+    const data = await response.json();
+
+    if (response.status === 400) {
+      // 400 bodies match /retrieve and /response: an apiError object
+      let errObj = null;
+      try {
+        errObj = parse(data);
+      } catch {
+        throw new HttpError(response);
+      }
+      if (isAPIError(errObj)) {
+        throw new Error(errObj.description);
+      }
+      throw new HttpError(response);
+    }
+
+    return parseFeedback(data);
   }
 
   /**
