@@ -632,10 +632,13 @@ describe('SnowLeopardClient', () => {
         json: jest.fn().mockResolvedValue({ ok: true, feedbackId: 'fb_123', gateStatus: 'raw' }),
       });
 
-      const result = await client.feedback({ feedbackText: mockFeedbackText });
+      const result = await client.feedback({
+        instanceId: mockInstanceId,
+        feedbackText: mockFeedbackText,
+      });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        `https://api.snowleopard.ai/feedback`,
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/feedback`,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -653,24 +656,6 @@ describe('SnowLeopardClient', () => {
       });
     });
 
-    it('should submit feedback using instanceId URL path', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        status: 202,
-        json: jest.fn().mockResolvedValue({ ok: true, feedbackId: 'fb_123', gateStatus: 'raw' }),
-      });
-
-      await client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText });
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/feedback`,
-        expect.objectContaining({
-          method: 'POST',
-          body: JSON.stringify({ feedbackText: mockFeedbackText }),
-        }),
-      );
-    });
-
     it('should send optional datasourceId and schemaId fields', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: true,
@@ -679,13 +664,14 @@ describe('SnowLeopardClient', () => {
       });
 
       await client.feedback({
+        instanceId: mockInstanceId,
         feedbackText: mockFeedbackText,
         datasourceId: 'ds-42',
         schemaId: 'orders_v2',
       });
 
       expect(global.fetch).toHaveBeenCalledWith(
-        `https://api.snowleopard.ai/feedback`,
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/feedback`,
         expect.objectContaining({
           method: 'POST',
           body: JSON.stringify({
@@ -709,16 +695,40 @@ describe('SnowLeopardClient', () => {
         }),
       });
 
-      const result = await client.feedback({ feedbackText: mockFeedbackText });
+      const result = await client.feedback({
+        instanceId: mockInstanceId,
+        feedbackText: mockFeedbackText,
+      });
 
       expect(result.truncated).toBe(true);
+    });
+
+    it('should handle empty instanceId', async () => {
+      const cases = ['', ' '];
+
+      for (const testCase of cases) {
+        await expect(
+          client.feedback({ instanceId: testCase, feedbackText: mockFeedbackText }),
+        ).rejects.toThrow('instanceId field must not be empty/whitespace');
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle non-string instanceId', async () => {
+      await expect(
+        client.feedback({
+          instanceId: 42 as unknown as string,
+          feedbackText: mockFeedbackText,
+        }),
+      ).rejects.toThrow('instanceId field must not be empty/whitespace');
+      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('should handle empty feedbackText', async () => {
       const cases = ['', ' '];
 
       for (const testCase of cases) {
-        await expect(client.feedback({ feedbackText: testCase })).rejects.toThrow(
+        await expect(client.feedback({ instanceId: mockInstanceId, feedbackText: testCase })).rejects.toThrow(
           'feedbackText field must not be empty/whitespace',
         );
       }
@@ -726,9 +736,12 @@ describe('SnowLeopardClient', () => {
     });
 
     it('should handle non-string feedbackText', async () => {
-      await expect(client.feedback({ feedbackText: 42 as unknown as string })).rejects.toThrow(
-        'feedbackText field must not be empty/whitespace',
-      );
+      await expect(
+        client.feedback({
+          instanceId: mockInstanceId,
+          feedbackText: 42 as unknown as string,
+        }),
+      ).rejects.toThrow('feedbackText field must not be empty/whitespace');
       expect(global.fetch).not.toHaveBeenCalled();
     });
 
@@ -744,9 +757,9 @@ describe('SnowLeopardClient', () => {
         }),
       });
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow(
-        'feedbackText field must not be empty/whitespace',
-      );
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('feedbackText field must not be empty/whitespace');
     });
 
     it('should throw HttpError for a 400 response with no __type__ field', async () => {
@@ -756,7 +769,9 @@ describe('SnowLeopardClient', () => {
         json: jest.fn().mockResolvedValue({ some: 'other shape' }),
       });
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('HTTP Error: 400');
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 400');
     });
 
     it('should throw HttpError for a 400 response that parses to a non-apiError type', async () => {
@@ -770,7 +785,9 @@ describe('SnowLeopardClient', () => {
         }),
       });
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('HTTP Error: 400');
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 400');
     });
 
     it('should throw HttpError, not a raw TypeError, for a 400 response with a bare JSON primitive body', async () => {
@@ -780,8 +797,12 @@ describe('SnowLeopardClient', () => {
         json: jest.fn().mockResolvedValue('bad request'),
       });
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow(HttpError);
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('HTTP Error: 400');
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow(HttpError);
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 400');
     });
 
     it('should reject a 2xx response whose body is not a valid success shape', async () => {
@@ -791,9 +812,9 @@ describe('SnowLeopardClient', () => {
         json: jest.fn().mockResolvedValue({ ok: false, error: 'something broke' }),
       });
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow(
-        'Invalid feedback response body: expected ok === true',
-      );
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('Invalid feedback response body: expected ok === true');
     });
 
     it('should throw HttpError for a 500 response without reading the body', async () => {
@@ -805,7 +826,9 @@ describe('SnowLeopardClient', () => {
         json: jsonMock,
       });
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('HTTP Error: 500');
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 500');
       expect(jsonMock).not.toHaveBeenCalled();
     });
 
@@ -821,7 +844,7 @@ describe('SnowLeopardClient', () => {
       (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
 
       try {
-        await client.feedback({ feedbackText: mockFeedbackText });
+        await client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText });
         fail('Expected HttpError to be thrown');
       } catch (error) {
         expect(error).toBeInstanceOf(HttpError);
@@ -837,7 +860,9 @@ describe('SnowLeopardClient', () => {
       const networkError = new Error('Network Error');
       (global.fetch as jest.Mock).mockRejectedValue(networkError);
 
-      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('Network Error');
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('Network Error');
     });
   });
 

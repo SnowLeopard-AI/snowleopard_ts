@@ -34,8 +34,8 @@ export interface SnowLeopardClientArgs {
 
 export interface SnowLeopardFeedbackArgs {
   feedbackText: string;
-  /** (optional) The cloud.snowleopard.ai instanceId */
-  instanceId?: string;
+  /** The cloud.snowleopard.ai instanceId */
+  instanceId: string;
   /** (optional) The datasource the feedback relates to */
   datasourceId?: string;
   /** (optional) The schema the feedback relates to */
@@ -303,7 +303,7 @@ export class SnowLeopardClient {
    *
    * @param options - Feedback options
    * @param options.feedbackText - Feedback text to record
-   * @param options.instanceId - (optional) The cloud.snowleopard.ai instanceId
+   * @param options.instanceId - The cloud.snowleopard.ai instanceId
    * @param options.datasourceId - (optional) The datasource the feedback relates to
    * @param options.schemaId - (optional) The schema the feedback relates to
    * @returns Promise resolving to a FeedbackResponse object
@@ -311,6 +311,9 @@ export class SnowLeopardClient {
    *   recognized error shape
    */
   async feedback(options: SnowLeopardFeedbackArgs): Promise<FeedbackResponse> {
+    if (typeof options.instanceId !== 'string' || !options.instanceId.trim()) {
+      throw new Error('instanceId field must not be empty/whitespace');
+    }
     // /feedback is not served by the datafile deployment, so datafileId is always undefined
     const url = `${this.baseURL}/${this.buildPath(options.instanceId, undefined, 'feedback')}`;
     const response = await this.fetchWithTimeout(

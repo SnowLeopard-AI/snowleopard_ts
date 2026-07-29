@@ -208,13 +208,13 @@ Stream natural language summary responses from a datafile query.
 - `knownData?: Record<string, any>` - Optional known data
 - Returns: `AsyncGenerator<ResponseDataObjects>`
 
-#### `feedback({instanceId: instanceId, feedbackText: feedbackText, datasourceId: datasourceId?, schemaId: schemaId?})`
+#### `feedback({feedbackText: feedbackText, instanceId: instanceId, datasourceId: datasourceId?, schemaId: schemaId?})`
 
 Give Snow Leopard feedback in plain text so it can understand your business logic and ontology better for
 more accurate answers.
 
-- `instanceId: string` - (optional) The cloud.snowleopard.ai instanceId
 - `feedbackText: string` - Feedback text to record
+- `instanceId: string` - The cloud.snowleopard.ai instanceId
 - `datasourceId?: string` - (optional) The datasource the feedback relates to
 - `schemaId?: string` - (optional) The schema the feedback relates to
 - Returns: `Promise<FeedbackResponse>`
