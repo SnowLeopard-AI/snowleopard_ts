@@ -241,6 +241,18 @@ describe('SnowLeopardClient', () => {
       );
     });
 
+    it('should not throw a raw TypeError for a 400 response with a bare JSON primitive body', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue('bad request'),
+      });
+
+      await expect(client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery })).resolves.toEqual(
+        'bad request',
+      );
+    });
+
     it('should handle non-200/409 status codes', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
@@ -517,6 +529,28 @@ describe('SnowLeopardClient', () => {
       }
     });
 
+    it('should not throw a raw TypeError for a 400 stream line that is a bare JSON primitive', async () => {
+      const mockBody = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(JSON.stringify('bad request') + '\n'));
+          controller.close();
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        body: mockBody,
+      });
+
+      const chunks = [];
+      for await (const chunk of client.response({ datafileId: mockDatafileId, userQuery: mockQuery })) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual(['bad request']);
+    });
+
     it('should skip lines that fail to parse and not yield null', async () => {
       const mockBody = new ReadableStream({
         start(controller) {
@@ -737,6 +771,29 @@ describe('SnowLeopardClient', () => {
       });
 
       await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('HTTP Error: 400');
+    });
+
+    it('should throw HttpError, not a raw TypeError, for a 400 response with a bare JSON primitive body', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue('bad request'),
+      });
+
+      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow(HttpError);
+      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow('HTTP Error: 400');
+    });
+
+    it('should reject a 2xx response whose body is not a valid success shape', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: jest.fn().mockResolvedValue({ ok: false, error: 'something broke' }),
+      });
+
+      await expect(client.feedback({ feedbackText: mockFeedbackText })).rejects.toThrow(
+        'Invalid feedback response body: expected ok === true',
+      );
     });
 
     it('should throw HttpError for a 500 response without reading the body', async () => {

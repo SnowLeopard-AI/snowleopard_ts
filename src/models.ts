@@ -94,7 +94,7 @@ export interface FeedbackResponse {
 }
 
 export function isAPIError(obj: any): obj is APIError {
-  return '__type__' in obj && obj.__type__ === 'apiError';
+  return obj != null && typeof obj === 'object' && '__type__' in obj && obj.__type__ === 'apiError';
 }
 
 export type RetrieveResponseObjects = RetrieveResponse | APIError;
@@ -151,6 +151,9 @@ export function parse(obj: any): any {
 export function parseFeedback(obj: any): FeedbackResponse {
   if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
     throw new Error('Invalid feedback response body');
+  }
+  if (obj.ok !== true) {
+    throw new Error('Invalid feedback response body: expected ok === true');
   }
   return {
     ok: obj.ok,

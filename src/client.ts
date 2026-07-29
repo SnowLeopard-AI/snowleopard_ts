@@ -342,7 +342,7 @@ export class SnowLeopardClient {
       } catch {
         throw new HttpError(response);
       }
-      if (errObj !== null && isAPIError(errObj)) {
+      if (isAPIError(errObj)) {
         throw new Error(errObj.description);
       }
       throw new HttpError(response);

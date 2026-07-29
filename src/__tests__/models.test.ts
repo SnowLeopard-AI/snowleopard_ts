@@ -75,6 +75,14 @@ describe('models', () => {
       });
     });
 
+    it('should return false instead of throwing for non-object values', () => {
+      const nonObjectValues = [null, undefined, 'bad request', 400, false, ['a', 'b']];
+      nonObjectValues.forEach((value) => {
+        expect(() => isAPIError(value)).not.toThrow();
+        expect(isAPIError(value)).toEqual(false);
+      });
+    });
+
     it('should parse all valid response types', () => {
       const validTypes = [
         { __type__: 'apiError', callId: 'call-1', responseStatus: 'ERROR', description: 'test' },
@@ -382,6 +390,16 @@ describe('models', () => {
         gateStatus: 'raw',
         truncated: false,
       });
+    });
+
+    it('should throw for a body missing ok', () => {
+      expect(() => parseFeedback({})).toThrow('Invalid feedback response body: expected ok === true');
+    });
+
+    it('should throw for a body with ok: false', () => {
+      expect(() => parseFeedback({ ok: false, error: 'failed' })).toThrow(
+        'Invalid feedback response body: expected ok === true',
+      );
     });
 
     it('should throw for null', () => {
