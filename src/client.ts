@@ -307,7 +307,8 @@ export class SnowLeopardClient {
    * @param options.datasourceId - (optional) The datasource the feedback relates to
    * @param options.schemaId - (optional) The schema the feedback relates to
    * @returns Promise resolving to a FeedbackResponse object
-   * @throws {HttpError} When the server returns a non 2xx/400 status
+   * @throws {HttpError} When the server returns a non-2xx status, or a 400 whose body isn't a
+   *   recognized error shape
    */
   async feedback(options: SnowLeopardFeedbackArgs): Promise<FeedbackResponse> {
     // /feedback is not served by the datafile deployment, so datafileId is always undefined

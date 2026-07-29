@@ -15,4 +15,5 @@ export {
   RetrieveResponseObjects,
   ResponseDataObjects,
   parse,
+  parseFeedback,
 } from './models.js';
