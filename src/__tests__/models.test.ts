@@ -1,7 +1,7 @@
 // copyright 2025 Snow Leopard, Inc
 // released under the MIT license - see LICENSE file
 
-import { isAPIError, parse, ResponseStatus } from '../models';
+import { isAPIError, parse, parseFeedback, ResponseStatus } from '../models';
 import type {
   APIError,
   SchemaData,
@@ -11,6 +11,7 @@ import type {
   ResponseData,
   EarlyTermination,
   ResponseLLMResult,
+  FeedbackResponse,
 } from '../models';
 
 describe('models', () => {
@@ -71,6 +72,14 @@ describe('models', () => {
       ];
       invalidObjs.forEach((obj) => {
         expect(isAPIError(obj)).toEqual(false);
+      });
+    });
+
+    it('should return false instead of throwing for non-object values', () => {
+      const nonObjectValues = [null, undefined, 'bad request', 400, false, ['a', 'b']];
+      nonObjectValues.forEach((value) => {
+        expect(() => isAPIError(value)).not.toThrow();
+        expect(isAPIError(value)).toEqual(false);
       });
     });
 
@@ -335,6 +344,79 @@ describe('models', () => {
 
       expect(llmResult.__type__).toBe('responseResult');
       expect(llmResult.responseStatus).toBe(ResponseStatus.SUCCESS);
+    });
+  });
+
+  describe('FeedbackResponse interface', () => {
+    it('should type-check valid FeedbackResponse', () => {
+      const feedbackResponse: FeedbackResponse = {
+        ok: true,
+        feedbackId: 'fb_123',
+        gateStatus: 'raw',
+        truncated: false,
+      };
+
+      expect(feedbackResponse.ok).toBe(true);
+      expect(feedbackResponse.gateStatus).toBe('raw');
+    });
+  });
+
+  describe('parseFeedback function', () => {
+    it('should parse a valid feedback response', () => {
+      const obj = { ok: true, feedbackId: 'fb_123', gateStatus: 'raw' };
+      expect(parseFeedback(obj)).toEqual({
+        ok: true,
+        feedbackId: 'fb_123',
+        gateStatus: 'raw',
+        truncated: false,
+      });
+    });
+
+    it('should default truncated to false when absent', () => {
+      const obj = { ok: true, feedbackId: 'fb_123', gateStatus: 'raw' };
+      expect(parseFeedback(obj).truncated).toBe(false);
+    });
+
+    it('should pass truncated through when true', () => {
+      const obj = { ok: true, feedbackId: 'fb_123', gateStatus: 'raw', truncated: true };
+      expect(parseFeedback(obj).truncated).toBe(true);
+    });
+
+    it('should drop unknown keys', () => {
+      const obj = { ok: true, feedbackId: 'fb_123', gateStatus: 'raw', extra: 'ignored' };
+      expect(parseFeedback(obj)).toEqual({
+        ok: true,
+        feedbackId: 'fb_123',
+        gateStatus: 'raw',
+        truncated: false,
+      });
+    });
+
+    it('should throw for a body missing ok', () => {
+      expect(() => parseFeedback({})).toThrow('Invalid feedback response body: expected ok === true');
+    });
+
+    it('should throw for a body with ok: false', () => {
+      expect(() => parseFeedback({ ok: false, error: 'failed' })).toThrow(
+        'Invalid feedback response body: expected ok === true',
+      );
+    });
+
+    it('should throw for null', () => {
+      expect(() => parseFeedback(null)).toThrow('Invalid feedback response body');
+    });
+
+    it('should throw for an array', () => {
+      expect(() => parseFeedback([1, 2, 3])).toThrow('Invalid feedback response body');
+    });
+
+    it('should throw for a primitive', () => {
+      expect(() => parseFeedback('not an object')).toThrow('Invalid feedback response body');
+    });
+
+    it('documents why a separate parser is needed: parse() rejects discriminator-less bodies', () => {
+      const obj = { ok: true, feedbackId: 'fb_123', gateStatus: 'raw' };
+      expect(() => parse(obj)).toThrow('Missing __type__ field');
     });
   });
 });

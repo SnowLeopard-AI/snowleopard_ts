@@ -11,7 +11,9 @@ export {
   ResponseData,
   EarlyTermination,
   ResponseLLMResult,
+  FeedbackResponse,
   RetrieveResponseObjects,
   ResponseDataObjects,
   parse,
+  parseFeedback,
 } from './models.js';

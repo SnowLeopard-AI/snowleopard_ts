@@ -241,6 +241,18 @@ describe('SnowLeopardClient', () => {
       );
     });
 
+    it('should not throw a raw TypeError for a 400 response with a bare JSON primitive body', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue('bad request'),
+      });
+
+      await expect(client.retrieve({ datafileId: mockDatafileId, userQuery: mockQuery })).resolves.toEqual(
+        'bad request',
+      );
+    });
+
     it('should handle non-200/409 status codes', async () => {
       (global.fetch as jest.Mock).mockResolvedValue({
         ok: false,
@@ -517,6 +529,28 @@ describe('SnowLeopardClient', () => {
       }
     });
 
+    it('should not throw a raw TypeError for a 400 stream line that is a bare JSON primitive', async () => {
+      const mockBody = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode(JSON.stringify('bad request') + '\n'));
+          controller.close();
+        },
+      });
+
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        body: mockBody,
+      });
+
+      const chunks = [];
+      for await (const chunk of client.response({ datafileId: mockDatafileId, userQuery: mockQuery })) {
+        chunks.push(chunk);
+      }
+
+      expect(chunks).toEqual(['bad request']);
+    });
+
     it('should skip lines that fail to parse and not yield null', async () => {
       const mockBody = new ReadableStream({
         start(controller) {
@@ -580,6 +614,255 @@ describe('SnowLeopardClient', () => {
       );
       expect(chunks).toHaveLength(1);
       expect(chunks[0].__type__).toBe('responseStart');
+    });
+  });
+
+  describe('feedback', () => {
+    let client: SnowLeopardClient;
+    const mockFeedbackText = 'the revenue totals looked wrong';
+
+    beforeEach(() => {
+      client = new SnowLeopardClient({ apiKey: mockApiKey });
+    });
+
+    it('should successfully submit feedback', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: jest.fn().mockResolvedValue({ ok: true, feedbackId: 'fb_123', gateStatus: 'raw' }),
+      });
+
+      const result = await client.feedback({
+        instanceId: mockInstanceId,
+        feedbackText: mockFeedbackText,
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/feedback`,
+        expect.objectContaining({
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${mockApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ feedbackText: mockFeedbackText }),
+        }),
+      );
+      expect(result).toEqual({
+        ok: true,
+        feedbackId: 'fb_123',
+        gateStatus: 'raw',
+        truncated: false,
+      });
+    });
+
+    it('should send optional datasourceId and schemaId fields', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: jest.fn().mockResolvedValue({ ok: true, feedbackId: 'fb_123', gateStatus: 'raw' }),
+      });
+
+      await client.feedback({
+        instanceId: mockInstanceId,
+        feedbackText: mockFeedbackText,
+        datasourceId: 'ds-42',
+        schemaId: 'orders_v2',
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith(
+        `https://api.snowleopard.ai/v1/instances/${mockInstanceId}/feedback`,
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({
+            feedbackText: mockFeedbackText,
+            datasourceId: 'ds-42',
+            schemaId: 'orders_v2',
+          }),
+        }),
+      );
+    });
+
+    it('should surface truncated flag when the server sets it', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: jest.fn().mockResolvedValue({
+          ok: true,
+          feedbackId: 'fb_123',
+          gateStatus: 'raw',
+          truncated: true,
+        }),
+      });
+
+      const result = await client.feedback({
+        instanceId: mockInstanceId,
+        feedbackText: mockFeedbackText,
+      });
+
+      expect(result.truncated).toBe(true);
+    });
+
+    it('should handle empty instanceId', async () => {
+      const cases = ['', ' '];
+
+      for (const testCase of cases) {
+        await expect(
+          client.feedback({ instanceId: testCase, feedbackText: mockFeedbackText }),
+        ).rejects.toThrow('instanceId field must not be empty/whitespace');
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle non-string instanceId', async () => {
+      await expect(
+        client.feedback({
+          instanceId: 42 as unknown as string,
+          feedbackText: mockFeedbackText,
+        }),
+      ).rejects.toThrow('instanceId field must not be empty/whitespace');
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle empty feedbackText', async () => {
+      const cases = ['', ' '];
+
+      for (const testCase of cases) {
+        await expect(client.feedback({ instanceId: mockInstanceId, feedbackText: testCase })).rejects.toThrow(
+          'feedbackText field must not be empty/whitespace',
+        );
+      }
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should handle non-string feedbackText', async () => {
+      await expect(
+        client.feedback({
+          instanceId: mockInstanceId,
+          feedbackText: 42 as unknown as string,
+        }),
+      ).rejects.toThrow('feedbackText field must not be empty/whitespace');
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('should throw the description from a 400 apiError response', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue({
+          __type__: 'apiError',
+          callId: 'call-1',
+          responseStatus: ResponseStatus.BAD_REQUEST,
+          description: 'feedbackText field must not be empty/whitespace',
+        }),
+      });
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('feedbackText field must not be empty/whitespace');
+    });
+
+    it('should throw HttpError for a 400 response with no __type__ field', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue({ some: 'other shape' }),
+      });
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 400');
+    });
+
+    it('should throw HttpError for a 400 response that parses to a non-apiError type', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue({
+          __type__: 'responseStart',
+          callId: 'call-1',
+          userQuery: mockFeedbackText,
+        }),
+      });
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 400');
+    });
+
+    it('should throw HttpError, not a raw TypeError, for a 400 response with a bare JSON primitive body', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: jest.fn().mockResolvedValue('bad request'),
+      });
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow(HttpError);
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 400');
+    });
+
+    it('should reject a 2xx response whose body is not a valid success shape', async () => {
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: true,
+        status: 202,
+        json: jest.fn().mockResolvedValue({ ok: false, error: 'something broke' }),
+      });
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('Invalid feedback response body: expected ok === true');
+    });
+
+    it('should throw HttpError for a 500 response without reading the body', async () => {
+      const jsonMock = jest.fn().mockResolvedValue({ ok: false, error: 'something broke' });
+      (global.fetch as jest.Mock).mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: jsonMock,
+      });
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('HTTP Error: 500');
+      expect(jsonMock).not.toHaveBeenCalled();
+    });
+
+    it('should throw HttpError with response object on error', async () => {
+      const mockResponse = {
+        ok: false,
+        status: 403,
+        statusText: 'Forbidden',
+        headers: new Headers({ 'x-error-code': 'INVALID_API_KEY' }),
+        json: jest.fn().mockResolvedValue({ error: 'Invalid API key' }),
+      };
+
+      (global.fetch as jest.Mock).mockResolvedValue(mockResponse);
+
+      try {
+        await client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText });
+        fail('Expected HttpError to be thrown');
+      } catch (error) {
+        expect(error).toBeInstanceOf(HttpError);
+        const httpError = error as HttpError;
+        expect(httpError.status).toBe(403);
+        expect(httpError.response).toBe(mockResponse);
+        expect(httpError.name).toBe('HttpError');
+        expect(httpError.message).toBe('HTTP Error: 403');
+      }
+    });
+
+    it('should handle network errors', async () => {
+      const networkError = new Error('Network Error');
+      (global.fetch as jest.Mock).mockRejectedValue(networkError);
+
+      await expect(
+        client.feedback({ instanceId: mockInstanceId, feedbackText: mockFeedbackText }),
+      ).rejects.toThrow('Network Error');
     });
   });
 
