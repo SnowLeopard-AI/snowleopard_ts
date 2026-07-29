@@ -80,6 +80,19 @@ export interface ResponseLLMResult {
   llmResponse: Record<string, any>;
 }
 
+/**
+ * Response body for the /feedback route.
+ *
+ * Unlike the other response objects, /feedback bodies carry no `__type__`
+ * discriminator, so this is not registered in `parseType` — use `parseFeedback`.
+ */
+export interface FeedbackResponse {
+  ok: true;
+  feedbackId: string;
+  gateStatus: string;
+  truncated: boolean;
+}
+
 export function isAPIError(obj: any): obj is APIError {
   return '__type__' in obj && obj.__type__ === 'apiError';
 }
@@ -130,4 +143,19 @@ export function parse(obj: any): any {
     return obj.map(parse) as any;
   }
   return obj;
+}
+
+/**
+ * Parse a /feedback response body, which carries no `__type__` discriminator.
+ */
+export function parseFeedback(obj: any): FeedbackResponse {
+  if (obj == null || typeof obj !== 'object' || Array.isArray(obj)) {
+    throw new Error('Invalid feedback response body');
+  }
+  return {
+    ok: obj.ok,
+    feedbackId: obj.feedbackId,
+    gateStatus: obj.gateStatus,
+    truncated: obj.truncated ?? false,
+  };
 }

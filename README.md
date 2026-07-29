@@ -43,6 +43,13 @@ for await (const chunk of client.response({
   console.log(chunk);
 }
 
+// Give Snow Leopard feedback in plain text for more accurate answers
+await client.feedback({
+  feedbackText:
+    "The revenue column in the orders table should be labeled 'gross revenue before discounts', not 'net revenue'.",
+  instanceId: 'your-instance-id',
+});
+
 await client.close();
 ```
 
@@ -86,6 +93,13 @@ for await (const chunk of client.response({
 })) {
   console.log(chunk);
 }
+
+// Give Snow Leopard feedback in plain text for more accurate answers
+await client.feedback({
+  feedbackText:
+    "The revenue column in the orders table should be labeled 'gross revenue before discounts', not 'net revenue'.",
+  instanceId: 'instance-id',
+});
 
 await client.close();
 ```
@@ -193,6 +207,20 @@ Stream natural language summary responses from a datafile query.
 - `userQuery: string` - Natural language query
 - `knownData?: Record<string, any>` - Optional known data
 - Returns: `AsyncGenerator<ResponseDataObjects>`
+
+#### `feedback({instanceId: instanceId, feedbackText: feedbackText, datasourceId: datasourceId?, schemaId: schemaId?})`
+
+Give Snow Leopard feedback in plain text so it can understand your business logic and ontology better for
+more accurate answers.
+
+- `instanceId: string` - (optional) The cloud.snowleopard.ai instanceId
+- `feedbackText: string` - Feedback text to record
+- `datasourceId?: string` - (optional) The datasource the feedback relates to
+- `schemaId?: string` - (optional) The schema the feedback relates to
+- Returns: `Promise<FeedbackResponse>`
+
+Note: unlike `retrieve` and `response`, `feedback` does not take a `datafileId` - the `/feedback` route is
+not served by the datafile deployment.
 
 #### `close()`
 

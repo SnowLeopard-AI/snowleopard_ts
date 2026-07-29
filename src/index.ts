@@ -11,6 +11,7 @@ export {
   ResponseData,
   EarlyTermination,
   ResponseLLMResult,
+  FeedbackResponse,
   RetrieveResponseObjects,
   ResponseDataObjects,
   parse,
